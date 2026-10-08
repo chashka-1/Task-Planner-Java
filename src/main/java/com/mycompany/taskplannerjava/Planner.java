@@ -3,7 +3,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.mycompany.taskplannerjava;
-
 /**
  *
  * @author Sofi
@@ -17,6 +16,7 @@ public class Planner extends javax.swing.JFrame {
      */
     public Planner() {
         initComponents();
+        updateWeekTitles();
     }
 
     /**
@@ -199,6 +199,7 @@ public class Planner extends javax.swing.JFrame {
         jButton3.addActionListener(this::jButton3ActionPerformed);
 
         jButton4.setText("<");
+        jButton4.addActionListener(this::jButton4ActionPerformed);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -218,7 +219,7 @@ public class Planner extends javax.swing.JFrame {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 156, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(6, 6, 6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 568, javax.swing.GroupLayout.PREFERRED_SIZE))))
         );
         jPanel1Layout.setVerticalGroup(
@@ -245,6 +246,8 @@ public class Planner extends javax.swing.JFrame {
         );
 
         getContentPane().add(jPanel1, java.awt.BorderLayout.CENTER);
+        jPanel1.getAccessibleContext().setAccessibleName("");
+        jPanel1.getAccessibleContext().setAccessibleDescription("");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -264,8 +267,37 @@ public class Planner extends javax.swing.JFrame {
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
+        
+        weekStart = weekStart.plusWeeks(1);
+        updateWeekTitles();
     }//GEN-LAST:event_jButton3ActionPerformed
 
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        // TODO add your handling code here:
+        weekStart = weekStart.minusWeeks(1);
+        updateWeekTitles();
+    }//GEN-LAST:event_jButton4ActionPerformed
+    
+    
+    private java.time.LocalDate weekStart = java.time.LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+
+    private void updateWeekTitles() {
+        javax.swing.JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
+            jScrollPane6, jScrollPane7, jScrollPane8};
+        
+        java.time.format.DateTimeFormatter fmt =
+                java.time.format.DateTimeFormatter.ofPattern("dd.MM EEE", java.util.Locale.ENGLISH);
+
+        for (int i = 0; i < panes.length; i++) {
+            panes[i].setBorder(javax.swing.BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+        }
+
+        int week = weekStart.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Week " + week));
+
+        jPanel2.revalidate();
+        jPanel2.repaint();
+    }
     /**
      * @param args the command line arguments
      */
