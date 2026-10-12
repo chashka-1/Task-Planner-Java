@@ -18,14 +18,25 @@ public class Planner extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Planner.class.getName());
     ArrayList<Task> monday;
-    HashMap<Integer, ArrayList<Task>> week = new HashMap<>();;
+    HashMap<Integer, ArrayList<Task>> week = new HashMap<>();
     javax.swing.JList[] weekDays;
+    
+    ArrayList<Task> dbTasks = new ArrayList<>();
+    
+    public void myOwnDB () {
+        dbTasks.add(new Task("task1", LocalDate.of(2026, 10, 12)));
+        dbTasks.add(new Task("task2", LocalDate.of(2026, 10, 13)));
+        dbTasks.add(new Task("task3", LocalDate.of(2026, 10, 15)));
+        dbTasks.add(new Task("task4", LocalDate.of(2026, 10, 16)));
+//        LocalDate date = LocalDate.of(2026, 10, 12);
+    }
+    
     /**
      * Creates new form Planner
      */
     public String[] fillModel(ArrayList<Task> day) {
         String[] strings = new String[day.size()];
-        for (int i=0; i < strings.length; i++) {
+        for (int i = 0; i < strings.length; i++) {
             strings[i] = day.get(i).getName();
         }
         return strings;
@@ -35,8 +46,12 @@ public class Planner extends javax.swing.JFrame {
     public void fillWeek(HashMap<Integer, ArrayList<Task>> week) {
         for (int i = 0; i < 7; i++) {
             week.put(i, new ArrayList<Task>());
-            week.get(i).add(new Task("task1", java.time.LocalDate.now()));
+//            week.get(i).add(new Task("task1", java.time.LocalDate.now()));
+            readDB(weekStart.plusDays(i), week.get(i));
         }
+        System.out.println("fillWeek");
+        System.out.println(week);
+
     }
     
     public void fillDay(ArrayList<Task> day) {
@@ -49,6 +64,9 @@ public class Planner extends javax.swing.JFrame {
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
         for (int i = 0; i < week.size(); i++) {
             DefaultListModel<String> model = new DefaultListModel<>();
+            if (week.get(i).isEmpty()) {
+                continue;
+            }
             String[] strings = fillModel(week.get(i));
 
             for (String task : strings) {
@@ -58,7 +76,33 @@ public class Planner extends javax.swing.JFrame {
             weekDays[i].setModel(model);
         }      
     }
-
+    
+    public void readDB (LocalDate date, ArrayList<Task> day) {
+        //select all tasks (and create them - task(data1, data2, ...)) from DB with a date in their due date to an arraylist dbTasks
+        //for now we check with if but if is not needed in case of db bcs select can filter
+        myOwnDB();
+        for (int i = 0; i < dbTasks.size(); i++) {
+            if (dbTasks.get(i).getDueDate().equals(date)) {
+                day.add(dbTasks.get(i));
+            }
+        }
+        System.out.println("readDB");
+        System.out.println(date);
+        System.out.println(day.toString());
+        //with file: find the file with date in name
+        //with file: make an arraylist with tasks (data1, data2, ...)
+        
+    }
+    
+    public void addTask (String name, LocalDate dueDate) {
+        //add task to database
+        //for now:
+        dbTasks.add(new Task(name, dueDate));
+        //
+        fillWeek(week);
+        showTasks(week);
+        
+    }
     
     public Planner() {
         
@@ -125,6 +169,9 @@ public class Planner extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jDialog1 = new javax.swing.JDialog();
+        jPanel5 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jList8 = new javax.swing.JList<>();
@@ -151,6 +198,36 @@ public class Planner extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
 
+        jLabel2.setText("jLabel2");
+
+        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addGap(82, 82, 82)
+                .addComponent(jLabel2)
+                .addContainerGap(94, Short.MAX_VALUE))
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
+                .addContainerGap(52, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addGap(48, 48, 48))
+        );
+
+        javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
+        jDialog1.getContentPane().setLayout(jDialog1Layout);
+        jDialog1Layout.setHorizontalGroup(
+            jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        jDialog1Layout.setVerticalGroup(
+            jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Tasks"));
@@ -175,66 +252,36 @@ public class Planner extends javax.swing.JFrame {
 
         jScrollPane3.setBorder(javax.swing.BorderFactory.createTitledBorder("Tuesday"));
 
-        jList2.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane3.setViewportView(jList2);
 
         jPanel2.add(jScrollPane3);
 
         jScrollPane4.setBorder(javax.swing.BorderFactory.createTitledBorder("Wednesday"));
 
-        jList3.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane4.setViewportView(jList3);
 
         jPanel2.add(jScrollPane4);
 
         jScrollPane5.setBorder(javax.swing.BorderFactory.createTitledBorder("Thursday"));
 
-        jList4.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane5.setViewportView(jList4);
 
         jPanel2.add(jScrollPane5);
 
         jScrollPane6.setBorder(javax.swing.BorderFactory.createTitledBorder("Friday"));
 
-        jList5.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane6.setViewportView(jList5);
 
         jPanel2.add(jScrollPane6);
 
         jScrollPane7.setBorder(javax.swing.BorderFactory.createTitledBorder("Saturday"));
 
-        jList6.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane7.setViewportView(jList6);
 
         jPanel2.add(jScrollPane7);
 
         jScrollPane8.setBorder(javax.swing.BorderFactory.createTitledBorder("Sunday"));
 
-        jList7.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane8.setViewportView(jList7);
 
         jPanel2.add(jScrollPane8);
@@ -337,11 +384,14 @@ public class Planner extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
-//        AddTaskForm popup = new AddTaskForm(this, true);
-        AddTaskForm popup = new AddTaskForm(this, true, "aaa1");
-
+        AddTaskForm popup = new AddTaskForm(this, true);
+//        popup.getCo
+//        AddTaskForm popup = new AddTaskForm(this, true, "aaa");
+//        javax.swing.JDialog popup1 = jDialog1;
         popup.setLocationRelativeTo(this);
         popup.setVisible(true);
+//        popup1.setLocationRelativeTo(this);
+//        popup1.setVisible(true);
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -374,10 +424,6 @@ public class Planner extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     
-    private void addTask() {
-        
-    }
-    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -405,7 +451,9 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
+    private javax.swing.JDialog jDialog1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JList<String> jList1;
     private javax.swing.JList<String> jList2;
     private javax.swing.JList<String> jList3;
@@ -418,6 +466,7 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;

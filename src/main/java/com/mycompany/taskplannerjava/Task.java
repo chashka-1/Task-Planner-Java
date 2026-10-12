@@ -11,9 +11,21 @@ import java.time.LocalDate;
  * @author Sofi
  */
 public class Task {
+    private int id;
     private String name;
     private LocalDate dueDate;
+    private LocalDate createdDate;
+    private LocalDate completedDate;
+    private String status;
     
+    public Task (int id, String name, LocalDate dueDate, LocalDate createdDate, LocalDate completedDate, String status) {
+        this.id = id;
+        this.name = name;
+        this.dueDate = dueDate;
+        this.createdDate = createdDate;
+        this.completedDate = completedDate;
+        this.status = status;
+    }
     
     public Task (String name, LocalDate dueDate) {
         this.name = name;
@@ -27,14 +39,4 @@ public class Task {
     public LocalDate getDueDate () {
         return dueDate;
     }
-
-//    @Override
-//    public int getSize() {
-//        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-//    }
-//
-//    @Override
-//    public Object getElementAt(int index) {
-//        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-//    }
 }
