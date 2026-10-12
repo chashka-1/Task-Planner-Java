@@ -19,7 +19,12 @@ public class AddTaskForm extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
     }
-
+    
+    public AddTaskForm(java.awt.Frame parent, boolean modal, String taskName) {
+        super(parent, modal);
+        initComponents();
+        jTextField1.setText(taskName);
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

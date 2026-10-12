@@ -4,8 +4,11 @@
  */
 package com.mycompany.taskplannerjava;
 
+import java.time.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
 
 /**
  *
@@ -15,8 +18,8 @@ public class Planner extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Planner.class.getName());
     ArrayList<Task> monday;
-    HashMap<Integer, ArrayList<Task>> week;
-    
+    HashMap<Integer, ArrayList<Task>> week = new HashMap<>();;
+    javax.swing.JList[] weekDays;
     /**
      * Creates new form Planner
      */
@@ -28,34 +31,78 @@ public class Planner extends javax.swing.JFrame {
         return strings;
     }
     
-    public String[] fillDay(ArrayList<Task> day) {
-        String[] strings = new String[day.size()];
-        for (int i=0; i < strings.length; i++) {
-            strings[i] = day.get(i).getName();
+    
+    public void fillWeek(HashMap<Integer, ArrayList<Task>> week) {
+        for (int i = 0; i < 7; i++) {
+            week.put(i, new ArrayList<Task>());
+            week.get(i).add(new Task("task1", java.time.LocalDate.now()));
         }
-        return strings;
     }
     
+    public void fillDay(ArrayList<Task> day) {
+        LocalDate filter = weekStart;
+        for (int i = 0; i < week.size(); i++) {
+            week.put(i, new ArrayList<Task>());
+        }
+    }
+    
+    public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
+        for (int i = 0; i < week.size(); i++) {
+            DefaultListModel<String> model = new DefaultListModel<>();
+            String[] strings = fillModel(week.get(i));
+
+            for (String task : strings) {
+                model.addElement(task);
+            }
+
+            weekDays[i].setModel(model);
+        }      
+    }
+
+    
     public Planner() {
-        this.monday = new ArrayList<>();
-        monday.add(new Task("task1", java.time.LocalDate.now()));
-        monday.add(new Task("task2", java.time.LocalDate.now()));
-        monday.add(new Task("ddddddfff2", java.time.LocalDate.now()));
+        
+//        this.monday = new ArrayList<>();
+//        monday.add(new Task("task1", java.time.LocalDate.now()));
+//        monday.add(new Task("task2", java.time.LocalDate.now()));
+//        monday.add(new Task("dddd", java.time.LocalDate.now()));
         
         initComponents();
         updateWeekTitles();
+        this.weekDays = new javax.swing.JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
+        fillWeek(week);
+        showTasks(week);
+        
 //        jList1.setModel(new javax.swing.AbstractListModel<String>() {
 //            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
 //            public int getSize() { return strings.length; }
 //            public String getElementAt(int i) { return strings[i]; }
 //        });
-        jList1.setModel(new javax.swing.AbstractListModel<String>() {
-            
-            String[] strings = fillModel(monday);
-//            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
+//        jList1.setModel(new javax.swing.AbstractListModel<String>() {
+//            
+//            String[] strings = fillModel(monday);
+////            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+//            public int getSize() { return strings.length; }
+//            public String getElementAt(int i) { return strings[i]; }
+//        });
+        
+        
+//            DefaultListModel<String> model = new DefaultListModel<>();
+//            String[] strings = fillModel(monday);
+//
+//            for (String task : strings) {
+//                model.addElement(task);
+//            }
+//
+//            jList1.setModel(model);
+
+        
+//        jList1.setModel(new javax.swing.DefaultListModel<String>());
+//        String[] strings = fillModel(monday);
+//        for (String task : strings) {
+//            jList1.getModel().addElement(task);
+//        }
+
 //        jList1.setModel(new Task ("task1", java.time.LocalDate.now()) {
 //            String[] strings = { new Task, "Item 2", "Item 3", "Item 4", "Item 5" };
 //            public int getSize() { return strings.length; }
