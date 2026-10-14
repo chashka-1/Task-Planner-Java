@@ -5,6 +5,7 @@
 package com.mycompany.taskplannerjava;
 
 import java.time.*;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.DefaultListModel;
@@ -17,19 +18,11 @@ import javax.swing.JList;
 public class Planner extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Planner.class.getName());
+    // used to execute SQL statements
+    private Connection conn;
     ArrayList<Task> monday;
     HashMap<Integer, ArrayList<Task>> week = new HashMap<>();
     javax.swing.JList[] weekDays;
-    
-    ArrayList<Task> dbTasks = new ArrayList<>();
-    
-    public void myOwnDB () {
-        dbTasks.add(new Task("task1", LocalDate.of(2026, 10, 12)));
-        dbTasks.add(new Task("task2", LocalDate.of(2026, 10, 13)));
-        dbTasks.add(new Task("task3", LocalDate.of(2026, 10, 15)));
-        dbTasks.add(new Task("task4", LocalDate.of(2026, 10, 16)));
-//        LocalDate date = LocalDate.of(2026, 10, 12);
-    }
     
     /**
      * Creates new form Planner
@@ -64,9 +57,14 @@ public class Planner extends javax.swing.JFrame {
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
         for (int i = 0; i < week.size(); i++) {
             DefaultListModel<String> model = new DefaultListModel<>();
+            
+            // reset the day's model so that tasks dont duplicate
+            weekDays[i].setModel(model); 
+            
             if (week.get(i).isEmpty()) {
                 continue;
             }
+            
             String[] strings = fillModel(week.get(i));
 
             for (String task : strings) {
@@ -78,9 +76,41 @@ public class Planner extends javax.swing.JFrame {
     }
     
     public void readDB (LocalDate date, ArrayList<Task> day) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+        
+        ArrayList<Task> dbTasks = new ArrayList<>();
+        
+        String queryStatement = 
+            "SELECT task_id, name, date_created, date_completed, status, date FROM task WHERE date = ? AND user_id = ?";
+        
+        try (var pstmt = conn.prepareStatement(queryStatement)) {
+            pstmt.setString(1, date.toString());
+            pstmt.setInt(2, 1); 
+            
+            var rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                dbTasks.add(new Task(
+                        rs.getInt("task_id"),
+                        rs.getString("name"),
+                        LocalDate.parse(rs.getString("date")),
+                        LocalDate.parse(rs.getString("date_created")),
+                        rs.getString("status")
+                ));
+            }
+            
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+            
+
         //select all tasks (and create them - task(data1, data2, ...)) from DB with a date in their due date to an arraylist dbTasks
         //for now we check with if but if is not needed in case of db bcs select can filter
-        myOwnDB();
+        // myOwnDB();
         for (int i = 0; i < dbTasks.size(); i++) {
             if (dbTasks.get(i).getDueDate().equals(date)) {
                 day.add(dbTasks.get(i));
@@ -95,16 +125,33 @@ public class Planner extends javax.swing.JFrame {
     }
     
     public void addTask (String name, LocalDate dueDate) {
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+        String addStatement = 
+                "INSERT INTO task(name, date_created, date, user_id) VALUES(?,?,?,?)";
+        
+        try (var pstmt = conn.prepareStatement(addStatement)) {
+            pstmt.setString(1, name);
+            pstmt.setString(2, LocalDate.now().toString());
+            pstmt.setString(3, dueDate.toString());
+            pstmt.setInt(4, 1);
+            pstmt.executeUpdate();
+            System.out.println("This should have wo rked.");
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
         //add task to database
         //for now:
-        dbTasks.add(new Task(name, dueDate));
-        //
+        // dbTasks.add(new Task(name, dueDate));
+
         fillWeek(week);
         showTasks(week);
         
     }
     
-    public Planner() {
+    public Planner(Connection conn) {
         
 //        this.monday = new ArrayList<>();
 //        monday.add(new Task("task1", java.time.LocalDate.now()));
@@ -114,6 +161,7 @@ public class Planner extends javax.swing.JFrame {
         initComponents();
         updateWeekTitles();
         this.weekDays = new javax.swing.JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
+        this.conn = conn;
         fillWeek(week);
         showTasks(week);
         
@@ -374,12 +422,16 @@ public class Planner extends javax.swing.JFrame {
         // TODO add your handling code here:
         weekStart = weekStart.minusWeeks(1);
         updateWeekTitles();
+        fillWeek(week);
+        showTasks(week);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
         weekStart = weekStart.plusWeeks(1);
         updateWeekTitles();
+        fillWeek(week);
+        showTasks(week);
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -443,7 +495,7 @@ public class Planner extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Planner().setVisible(true));
+        //java.awt.EventQueue.invokeLater(() -> new Planner().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
