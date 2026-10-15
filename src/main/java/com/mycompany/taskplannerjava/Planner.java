@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.IsoFields;
+import java.time.temporal.TemporalAdjusters;
+import javax.swing.BorderFactory;
+import javax.swing.JScrollPane;
+import javax.swing.ListModel;
 
 /**
  *
@@ -17,23 +23,26 @@ import javax.swing.JList;
 public class Planner extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Planner.class.getName());
-    ArrayList<Task> monday;
+    
     HashMap<Integer, ArrayList<Task>> week = new HashMap<>();
     javax.swing.JList[] weekDays;
     
     ArrayList<Task> dbTasks = new ArrayList<>();
     
     public void myOwnDB () {
+        dbTasks.add(new Task("task0", LocalDate.of(2026, 10, 16)));
         dbTasks.add(new Task("task1", LocalDate.of(2026, 10, 12)));
         dbTasks.add(new Task("task2", LocalDate.of(2026, 10, 13)));
         dbTasks.add(new Task("task3", LocalDate.of(2026, 10, 15)));
         dbTasks.add(new Task("task4", LocalDate.of(2026, 10, 16)));
+        dbTasks.add(new Task("task00", LocalDate.of(2026, 10, 19)));
+        dbTasks.add(new Task("task11", LocalDate.of(2026, 10, 20)));
+        dbTasks.add(new Task("task22", LocalDate.of(2026, 10, 11)));
+        dbTasks.add(new Task("task33", LocalDate.of(2026, 10, 29)));
+        dbTasks.add(new Task("task44", LocalDate.of(2026, 10, 22)));
 //        LocalDate date = LocalDate.of(2026, 10, 12);
     }
     
-    /**
-     * Creates new form Planner
-     */
     public String[] fillModel(ArrayList<Task> day) {
         String[] strings = new String[day.size()];
         for (int i = 0; i < strings.length; i++) {
@@ -51,7 +60,18 @@ public class Planner extends javax.swing.JFrame {
         }
         System.out.println("fillWeek");
         System.out.println(week);
-
+    }
+    
+    public void emptyWeek(HashMap<Integer, ArrayList<Task>> week) {
+        week.clear();
+    }
+    
+    public void emptyModels(HashMap<Integer, ArrayList<Task>> week) {
+        for (int i = 0; i < week.size(); i++) {
+            DefaultListModel<String> model = (DefaultListModel<String>) weekDays[i].getModel();
+            model.clear();
+        }
+//        	removeAllElements()
     }
     
     public void fillDay(ArrayList<Task> day) {
@@ -64,6 +84,7 @@ public class Planner extends javax.swing.JFrame {
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
         for (int i = 0; i < week.size(); i++) {
             DefaultListModel<String> model = new DefaultListModel<>();
+            
             if (week.get(i).isEmpty()) {
                 continue;
             }
@@ -74,13 +95,14 @@ public class Planner extends javax.swing.JFrame {
             }
 
             weekDays[i].setModel(model);
+            
         }      
     }
     
     public void readDB (LocalDate date, ArrayList<Task> day) {
         //select all tasks (and create them - task(data1, data2, ...)) from DB with a date in their due date to an arraylist dbTasks
         //for now we check with if but if is not needed in case of db bcs select can filter
-        myOwnDB();
+        
         for (int i = 0; i < dbTasks.size(); i++) {
             if (dbTasks.get(i).getDueDate().equals(date)) {
                 day.add(dbTasks.get(i));
@@ -94,7 +116,7 @@ public class Planner extends javax.swing.JFrame {
         
     }
     
-    public void addTask (String name, LocalDate dueDate) {
+    public void addTaskToDB (String name, LocalDate dueDate) {
         //add task to database
         //for now:
         dbTasks.add(new Task(name, dueDate));
@@ -104,60 +126,16 @@ public class Planner extends javax.swing.JFrame {
         
     }
     
+    /**
+     * Creates new form Planner
+     */
     public Planner() {
-        
-//        this.monday = new ArrayList<>();
-//        monday.add(new Task("task1", java.time.LocalDate.now()));
-//        monday.add(new Task("task2", java.time.LocalDate.now()));
-//        monday.add(new Task("dddd", java.time.LocalDate.now()));
-        
         initComponents();
         updateWeekTitles();
         this.weekDays = new javax.swing.JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
+        myOwnDB();
         fillWeek(week);
         showTasks(week);
-        
-//        jList1.setModel(new javax.swing.AbstractListModel<String>() {
-//            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-//            public int getSize() { return strings.length; }
-//            public String getElementAt(int i) { return strings[i]; }
-//        });
-//        jList1.setModel(new javax.swing.AbstractListModel<String>() {
-//            
-//            String[] strings = fillModel(monday);
-////            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-//            public int getSize() { return strings.length; }
-//            public String getElementAt(int i) { return strings[i]; }
-//        });
-        
-        
-//            DefaultListModel<String> model = new DefaultListModel<>();
-//            String[] strings = fillModel(monday);
-//
-//            for (String task : strings) {
-//                model.addElement(task);
-//            }
-//
-//            jList1.setModel(model);
-
-        
-//        jList1.setModel(new javax.swing.DefaultListModel<String>());
-//        String[] strings = fillModel(monday);
-//        for (String task : strings) {
-//            jList1.getModel().addElement(task);
-//        }
-
-//        jList1.setModel(new Task ("task1", java.time.LocalDate.now()) {
-//            String[] strings = { new Task, "Item 2", "Item 3", "Item 4", "Item 5" };
-//            public int getSize() { return strings.length; }
-//            public String getElementAt(int i) { return strings[i]; }
-//        });
-//        jList1.setModel(new javax.swing.AbstractListModel<Task>() {
-//            Task[] tasks = { new Task(monday.get(0), java.time.LocalDate.now()), new Task(monday.get(1), java.time.LocalDate.now()) };
-//            public int getSize() { return tasks.length; }
-//            public Task getElementAt(int i) { return tasks[i].getName(); }
-//        });
-//        ArrayList<Task>[7,100]
     }
 
     /**
@@ -172,6 +150,8 @@ public class Planner extends javax.swing.JFrame {
         jDialog1 = new javax.swing.JDialog();
         jPanel5 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
+        jScrollPane9 = new javax.swing.JScrollPane();
+        jTextArea1 = new javax.swing.JTextArea();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jList8 = new javax.swing.JList<>();
@@ -200,21 +180,32 @@ public class Planner extends javax.swing.JFrame {
 
         jLabel2.setText("jLabel2");
 
+        jTextArea1.setColumns(20);
+        jTextArea1.setRows(5);
+        jScrollPane9.setViewportView(jTextArea1);
+
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
-                .addGap(82, 82, 82)
-                .addComponent(jLabel2)
-                .addContainerGap(94, Short.MAX_VALUE))
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addGap(127, 127, 127)
+                        .addComponent(jLabel2))
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addGap(56, 56, 56)
+                        .addComponent(jScrollPane9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(97, Short.MAX_VALUE))
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
-                .addContainerGap(52, Short.MAX_VALUE)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addGap(60, 60, 60)
                 .addComponent(jLabel2)
-                .addGap(48, 48, 48))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(16, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
@@ -374,12 +365,20 @@ public class Planner extends javax.swing.JFrame {
         // TODO add your handling code here:
         weekStart = weekStart.minusWeeks(1);
         updateWeekTitles();
+        emptyWeek(week);
+        emptyModels(week);
+        fillWeek(week);
+        showTasks(week);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
         weekStart = weekStart.plusWeeks(1);
         updateWeekTitles();
+        emptyWeek(week);
+        emptyModels(week);
+        fillWeek(week);
+        showTasks(week);
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -396,26 +395,26 @@ public class Planner extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
+//        javax.swing.JDialog dialog = new javax.swing.JDialog();
+//        jDialog1.setVisible(true);
+//        jDialog1.setLocationRelativeTo(this);
     }//GEN-LAST:event_jButton1ActionPerformed
     
     
-    private java.time.LocalDate weekStart = java.time.LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-    
-    HashMap<Integer, Task> tasks = new HashMap<>();
+    private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     
     private void updateWeekTitles() {
-        javax.swing.JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
+        JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
             jScrollPane6, jScrollPane7, jScrollPane8};
         
-        java.time.format.DateTimeFormatter fmt =
-                java.time.format.DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
 
         for (int i = 0; i < panes.length; i++) {
-            panes[i].setBorder(javax.swing.BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+            panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
         }
 
-        int week = weekStart.get(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR);
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Week " + week));
+        var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
 
         jPanel2.revalidate();
         jPanel2.repaint();
@@ -475,5 +474,7 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JScrollPane jScrollPane7;
     private javax.swing.JScrollPane jScrollPane8;
+    private javax.swing.JScrollPane jScrollPane9;
+    private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
 }
