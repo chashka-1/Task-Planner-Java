@@ -71,7 +71,6 @@ public class Planner extends javax.swing.JFrame {
                 model.addElement(task);
             }
 
-            weekDays[i].setModel(model);
         }      
     }
     
