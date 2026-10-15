@@ -5,6 +5,7 @@
 package com.mycompany.taskplannerjava;
 
 import java.time.LocalDate;
+import javax.swing.JFrame;
 
 /**
  *
@@ -17,18 +18,17 @@ public class AddTaskForm extends javax.swing.JDialog {
     /**
      * Creates new form AddTaskForm
      */
-    private java.awt.Frame mainFrame;
+    private Planner mainFrame;
     
-    public AddTaskForm(java.awt.Frame parent, boolean modal) {
+    public AddTaskForm(Planner parent, boolean modal) {
         super(parent, modal);
-        
-        initComponents();
         this.mainFrame = parent;
-
+        initComponents();
     }
     
-    public AddTaskForm(java.awt.Frame parent, boolean modal, String taskName) {
+    public AddTaskForm(Planner parent, boolean modal, String taskName) {
         super(parent, modal);
+        this.mainFrame = parent;
         initComponents();
         jTextField1.setText(taskName);
     }
@@ -123,11 +123,9 @@ public class AddTaskForm extends javax.swing.JDialog {
 //        LocalDate dueDate = jTextField2.getText();
 //        addTask(name, )
         LocalDate dueDate = LocalDate.parse(jTextField2.getText().trim()); // yyyy-MM-dd
-//        mainFrame.addTaskToDB(name, dueDate);
-        dispose();
-                
-                
+        mainFrame.addTask(name, dueDate);
         
+        dispose();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed

@@ -85,6 +85,8 @@ public class Planner extends javax.swing.JFrame {
         for (int i = 0; i < week.size(); i++) {
             DefaultListModel<String> model = new DefaultListModel<>();
             
+            weekDays[i].setModel(model);
+            
             if (week.get(i).isEmpty()) {
                 continue;
             }
@@ -93,9 +95,6 @@ public class Planner extends javax.swing.JFrame {
             for (String task : strings) {
                 model.addElement(task);
             }
-
-            weekDays[i].setModel(model);
-            
         }      
     }
     
@@ -116,7 +115,7 @@ public class Planner extends javax.swing.JFrame {
         
     }
     
-    public void addTaskToDB (String name, LocalDate dueDate) {
+    public void addTask (String name, LocalDate dueDate) {
         //add task to database
         //for now:
         dbTasks.add(new Task(name, dueDate));
