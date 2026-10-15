@@ -18,12 +18,11 @@ public class Task {
     private LocalDate completedDate;
     private String status;
     
-    public Task (int id, String name, LocalDate dueDate, LocalDate createdDate, LocalDate completedDate, String status) {
+    public Task (int id, String name, LocalDate dueDate, LocalDate createdDate, String status) {
         this.id = id;
         this.name = name;
         this.dueDate = dueDate;
         this.createdDate = createdDate;
-        this.completedDate = completedDate;
         this.status = status;
     }
     
