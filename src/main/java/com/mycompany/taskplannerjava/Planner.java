@@ -132,7 +132,7 @@ public class Planner extends javax.swing.JFrame {
     /**
      * Creates new form Planner
      */
-    public Planner() {
+    public Planner(Connection conn) {
         initComponents();
         updateWeekTitles();
         this.weekDays = new javax.swing.JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
