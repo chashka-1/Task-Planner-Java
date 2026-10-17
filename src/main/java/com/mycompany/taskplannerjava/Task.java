@@ -38,4 +38,8 @@ public class Task {
     public LocalDate getDueDate () {
         return dueDate;
     }
+    
+    public int getID () {
+        return id;
+    }
 }
