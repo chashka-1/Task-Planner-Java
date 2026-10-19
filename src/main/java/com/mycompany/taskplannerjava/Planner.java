@@ -130,6 +130,28 @@ public class Planner extends javax.swing.JFrame {
     }
     
     public void removeTask (int taskID) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+        String removeStatement = 
+                "DELETE FROM task WHERE task_id = ?";
+        
+        try (var pstmt = conn.prepareStatement(removeStatement)) {
+            pstmt.setInt(1, taskID);
+            
+            int affectedRows = pstmt.executeUpdate();
+            
+            if (affectedRows > 0) {
+                System.out.println("Task with ID " + taskID + " deleted successfuly.");
+            } else {
+                System.out.println("No record with ID " + taskID + " found.");
+            }
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+
         //TODO: SQL remove task by finding it with its id
         showTasks(week);
     }
