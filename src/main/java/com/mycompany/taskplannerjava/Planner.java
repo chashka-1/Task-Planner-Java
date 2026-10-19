@@ -4,18 +4,16 @@
  */
 package com.mycompany.taskplannerjava;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import javax.swing.DefaultListModel;
-import javax.swing.JList;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
-import javax.swing.BorderFactory;
-import javax.swing.JScrollPane;
-import javax.swing.ListModel;
+import javax.swing.*;
 
 /**
  *
@@ -27,11 +25,8 @@ public class Planner extends javax.swing.JFrame {
     // used to execute SQL statements
     private Connection conn;
     HashMap<Integer, ArrayList<Task>> week = new HashMap<>();
-    javax.swing.JList[] weekDays;
+    JList[] weekDays;
     
-    /**
-     * Creates new form Planner
-     */
     public String[] fillModel(ArrayList<Task> day) {
         String[] strings = new String[day.size()];
         for (int i = 0; i < strings.length; i++) {
@@ -40,15 +35,15 @@ public class Planner extends javax.swing.JFrame {
         return strings;
     }
     
-    
     public void fillWeek(HashMap<Integer, ArrayList<Task>> week) {
         for (int i = 0; i < 7; i++) {
-            week.put(i, new ArrayList<Task>());
+            week.put(i, new ArrayList<>());
             readDB(weekStart.plusDays(i), week.get(i));
         }
     }
     
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
+        fillWeek(week);
         for (int i = 0; i < week.size(); i++) {
             DefaultListModel<String> model = new DefaultListModel<>();
             
@@ -59,9 +54,10 @@ public class Planner extends javax.swing.JFrame {
             }
             
             String[] strings = fillModel(week.get(i));
-
+            
             for (String task : strings) {
                 model.addElement(task);
+//                model.getElementAt(i)
             }
         }      
     }
@@ -123,10 +119,32 @@ public class Planner extends javax.swing.JFrame {
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
-
-        fillWeek(week);
         showTasks(week);
         
+    }
+    
+    static int arrayIndexOf(JList[] jlists, JList target) {
+        java.util.List<JList> list = java.util.Arrays.asList(jlists);
+        return list.indexOf(target);
+    }
+    
+    public void removeTask (int taskID) {
+        //TODO: SQL remove task by finding it with its id
+        showTasks(week);
+    }
+    
+    
+    private void completeTask(int taskID) {
+        //TODO: SQL set task's completed date today
+        //TODO: somehow change the appearance of this task in Jlist --- 
+        //--- i think it's better to do it in showTasks()
+        showTasks(week);
+    }
+
+    private void editTask(int taskID) {
+        //TODO: form popups to enter name/date 
+        //AddTaskForm popup = new AddTaskForm(this, true, "aaa");
+        //TODO: SQL update task
     }
     
     /**
@@ -135,12 +153,58 @@ public class Planner extends javax.swing.JFrame {
     public Planner(Connection conn) {
         initComponents();
         updateWeekTitles();
-        this.weekDays = new javax.swing.JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
+        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
         this.conn = conn;
-        fillWeek(week);
         showTasks(week);
-    }
+        
+        MouseAdapter listener = new MouseAdapter() {
+            @Override 
+            public void mousePressed(MouseEvent e) {
+                showPopup(e);
+            }
+            @Override 
+            public void mouseReleased(MouseEvent e) { 
+                showPopup(e);
+            }
 
+            private void showPopup(MouseEvent e) {
+                
+                if (!e.isPopupTrigger()) {
+                    return;
+                }
+                
+                JList<String> list = (JList<String>) e.getComponent();
+                int index = list.locationToIndex(e.getPoint());
+                
+                if (index >= 0 && list.getCellBounds(index, index).contains(e.getPoint())) {
+                    list.setSelectedIndex(index);
+                    jPopupMenu1.show(list, e.getX(), e.getY());
+                } 
+                else {
+                    list.clearSelection();
+                }
+            }
+            
+            //wanted to try to fix built-in selection of jlists
+//            private void removeSelection(MouseEvent e) {
+//                
+//                JList<String> list = (JList<String>) e.getComponent();
+//                int minInd = list.getMinSelectionIndex();
+//                int maxInd = list.getMaxSelectionIndex();
+//                
+//                if (list.getCellBounds(minInd, maxInd) != null && !list.getCellBounds(minInd, maxInd).contains(e.getPoint())) {
+//                    list.clearSelection();
+//                } 
+//                else {
+//                    list.clearSelection();
+//                }
+//            }
+        };
+        for (JList l: weekDays) {
+            l.addMouseListener(listener);
+        }
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -150,11 +214,10 @@ public class Planner extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jDialog1 = new javax.swing.JDialog();
-        jPanel5 = new javax.swing.JPanel();
-        jLabel2 = new javax.swing.JLabel();
-        jScrollPane9 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        jPopupMenu1 = new javax.swing.JPopupMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem2 = new javax.swing.JMenuItem();
+        jMenuItem3 = new javax.swing.JMenuItem();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jList8 = new javax.swing.JList<>();
@@ -181,46 +244,19 @@ public class Planner extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
 
-        jLabel2.setText("jLabel2");
+        jMenuItem1.setText("Edit");
+        jMenuItem1.setName(""); // NOI18N
+        jMenuItem1.addActionListener(this::jMenuItem1ActionPerformed);
+        jPopupMenu1.add(jMenuItem1);
+        jMenuItem1.getAccessibleContext().setAccessibleDescription("");
 
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane9.setViewportView(jTextArea1);
+        jMenuItem2.setText("Mark as completed");
+        jMenuItem2.addActionListener(this::jMenuItem2ActionPerformed);
+        jPopupMenu1.add(jMenuItem2);
 
-        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
-        jPanel5.setLayout(jPanel5Layout);
-        jPanel5Layout.setHorizontalGroup(
-            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel5Layout.createSequentialGroup()
-                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addGap(127, 127, 127)
-                        .addComponent(jLabel2))
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addGap(56, 56, 56)
-                        .addComponent(jScrollPane9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(97, Short.MAX_VALUE))
-        );
-        jPanel5Layout.setVerticalGroup(
-            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel5Layout.createSequentialGroup()
-                .addGap(60, 60, 60)
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(16, Short.MAX_VALUE))
-        );
-
-        javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
-        jDialog1.getContentPane().setLayout(jDialog1Layout);
-        jDialog1Layout.setHorizontalGroup(
-            jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
-        jDialog1Layout.setVerticalGroup(
-            jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
+        jMenuItem3.setText("Delete");
+        jMenuItem3.addActionListener(this::jMenuItem3ActionPerformed);
+        jPopupMenu1.add(jMenuItem3);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -365,41 +401,50 @@ public class Planner extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // TODO add your handling code here:
         weekStart = weekStart.minusWeeks(1);
         updateWeekTitles();
-        fillWeek(week);
         showTasks(week);
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
         weekStart = weekStart.plusWeeks(1);
         updateWeekTitles();
-        fillWeek(week);
         showTasks(week);
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
         AddTaskForm popup = new AddTaskForm(this, true);
-//        popup.getCo
-//        AddTaskForm popup = new AddTaskForm(this, true, "aaa");
-//        javax.swing.JDialog popup1 = jDialog1;
         popup.setLocationRelativeTo(this);
         popup.setVisible(true);
-//        popup1.setLocationRelativeTo(this);
-//        popup1.setVisible(true);
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-//        javax.swing.JDialog dialog = new javax.swing.JDialog();
-//        jDialog1.setVisible(true);
-//        jDialog1.setLocationRelativeTo(this);
+        //remove button here is not needed anymore
     }//GEN-LAST:event_jButton1ActionPerformed
-    
-    
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
+        int dayIndex = arrayIndexOf(weekDays, jListInvoked);
+        int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
+        editTask(taskID);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
+        int dayIndex = arrayIndexOf(weekDays, jListInvoked);
+        int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
+        completeTask(taskID);
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
+        int dayIndex = arrayIndexOf(weekDays, jListInvoked);
+        int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
+        removeTask(taskID);
+//        System.out.println(weekStart.plusDays(dayIndex).format(fmtSQL) + " " + dayIndex);
+//        System.out.println(weekStart.plusDays(dayIndex).toString() + " " + dayIndex);
+    }//GEN-LAST:event_jMenuItem3ActionPerformed
+
     private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     
     private void updateWeekTitles() {
@@ -449,9 +494,7 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
-    private javax.swing.JDialog jDialog1;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JList<String> jList1;
     private javax.swing.JList<String> jList2;
     private javax.swing.JList<String> jList3;
@@ -460,11 +503,14 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JList<String> jList6;
     private javax.swing.JList<String> jList7;
     private javax.swing.JList<String> jList8;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
@@ -473,7 +519,5 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JScrollPane jScrollPane7;
     private javax.swing.JScrollPane jScrollPane8;
-    private javax.swing.JScrollPane jScrollPane9;
-    private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
 }
