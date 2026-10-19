@@ -26,6 +26,7 @@ public class Planner extends javax.swing.JFrame {
     private Connection conn;
     HashMap<Integer, ArrayList<Task>> week = new HashMap<>();
     JList[] weekDays;
+    ListTransferHandler lh;
     
     public String[] fillModel(ArrayList<Task> day) {
         String[] strings = new String[day.size()];
@@ -133,7 +134,6 @@ public class Planner extends javax.swing.JFrame {
         showTasks(week);
     }
     
-    
     private void completeTask(int taskID) {
         //TODO: SQL set task's completed date today
         //TODO: somehow change the appearance of this task in Jlist --- 
@@ -155,6 +155,7 @@ public class Planner extends javax.swing.JFrame {
         updateWeekTitles();
         this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
         this.conn = conn;
+        lh = new ListTransferHandler();
         showTasks(week);
         
         MouseAdapter listener = new MouseAdapter() {
@@ -202,6 +203,7 @@ public class Planner extends javax.swing.JFrame {
         };
         for (JList l: weekDays) {
             l.addMouseListener(listener);
+            l.setTransferHandler(lh);
         }
     }
     
@@ -267,6 +269,9 @@ public class Planner extends javax.swing.JFrame {
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
         });
+        jList8.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jList8.setDragEnabled(true);
+        jList8.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane1.setViewportView(jList8);
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Week 58"));
@@ -275,43 +280,58 @@ public class Planner extends javax.swing.JFrame {
 
         jScrollPane2.setBorder(javax.swing.BorderFactory.createTitledBorder("Monday"));
 
+        jList1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jList1.setToolTipText("");
+        jList1.setDragEnabled(true);
+        jList1.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane2.setViewportView(jList1);
 
         jPanel2.add(jScrollPane2);
 
         jScrollPane3.setBorder(javax.swing.BorderFactory.createTitledBorder("Tuesday"));
 
+        jList2.setDragEnabled(true);
+        jList2.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane3.setViewportView(jList2);
 
         jPanel2.add(jScrollPane3);
 
         jScrollPane4.setBorder(javax.swing.BorderFactory.createTitledBorder("Wednesday"));
 
+        jList3.setDragEnabled(true);
+        jList3.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane4.setViewportView(jList3);
 
         jPanel2.add(jScrollPane4);
 
         jScrollPane5.setBorder(javax.swing.BorderFactory.createTitledBorder("Thursday"));
 
+        jList4.setDragEnabled(true);
+        jList4.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane5.setViewportView(jList4);
 
         jPanel2.add(jScrollPane5);
 
         jScrollPane6.setBorder(javax.swing.BorderFactory.createTitledBorder("Friday"));
 
+        jList5.setDragEnabled(true);
+        jList5.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane6.setViewportView(jList5);
 
         jPanel2.add(jScrollPane6);
 
         jScrollPane7.setBorder(javax.swing.BorderFactory.createTitledBorder("Saturday"));
 
+        jList6.setDragEnabled(true);
+        jList6.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane7.setViewportView(jList6);
 
         jPanel2.add(jScrollPane7);
 
         jScrollPane8.setBorder(javax.swing.BorderFactory.createTitledBorder("Sunday"));
 
+        jList7.setDragEnabled(true);
+        jList7.setDropMode(javax.swing.DropMode.INSERT);
         jScrollPane8.setViewportView(jList7);
 
         jPanel2.add(jScrollPane8);
