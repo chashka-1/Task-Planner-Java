@@ -135,8 +135,7 @@ public class Planner extends javax.swing.JFrame {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
-        String removeStatement = 
-                "DELETE FROM task WHERE task_id = ?";
+        String removeStatement = "DELETE FROM task WHERE task_id = ?";
         
         try (var pstmt = conn.prepareStatement(removeStatement)) {
             pstmt.setInt(1, taskID);
@@ -152,12 +151,35 @@ public class Planner extends javax.swing.JFrame {
             System.err.println(e.getMessage());
         }
 
-        //TODO: SQL remove task by finding it with its id
         showTasks(week);
     }
     
     private void completeTask(int taskID) {
-        //TODO: SQL set task's completed date today
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+
+        String completeStatement = "UPDATE task SET date_completed = ? , "
+                + "status = ? , name = ? || name || ? WHERE task_id =  ?";
+        
+        try (var pstmt = conn.prepareStatement(completeStatement)) {
+            pstmt.setString(1, LocalDate.now().toString());
+            pstmt.setString(2, "completed");
+            pstmt.setInt(3, taskID);
+            
+            // makes task look crossed out in the planner
+            pstmt.setString(3, "<html><s>");
+            pstmt.setString(4, "</s></html>");
+            
+            pstmt.setInt(5, taskID);
+            
+            pstmt.executeUpdate();
+        } catch(SQLException e) {
+            System.err.println(e.getMessage());
+        }
+                
         //TODO: somehow change the appearance of this task in Jlist --- 
         //--- i think it's better to do it in showTasks()
         showTasks(week);
