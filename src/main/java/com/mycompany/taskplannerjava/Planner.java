@@ -41,6 +41,8 @@ public class Planner extends javax.swing.JFrame {
             week.put(i, new ArrayList<>());
             readDB(weekStart.plusDays(i), week.get(i));
         }
+        week.put(7, new ArrayList<>());
+        readDB(null, week.get(7));
     }
     
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
@@ -153,7 +155,7 @@ public class Planner extends javax.swing.JFrame {
     public Planner(Connection conn) {
         initComponents();
         updateWeekTitles();
-        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
+        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7, jList8};
         this.conn = conn;
         lh = new ListTransferHandler();
         showTasks(week);
