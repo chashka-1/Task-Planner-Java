@@ -115,8 +115,12 @@ public class AddTaskForm extends javax.swing.JDialog {
         String name = jTextField1.getText();
 //        LocalDate dueDate = jTextField2.getText();
 //        addTask(name, )
-        LocalDate dueDate = LocalDate.parse(jTextField2.getText().trim()); // yyyy-MM-dd
-        mainFrame.addTask(name, dueDate);
+        String date = jTextField2.getText();
+        if (date.isBlank()) {
+            mainFrame.addTask(name, null);
+        } else {
+            LocalDate dueDate = LocalDate.parse(jTextField2.getText().trim()); // yyyy-MM-dd
+        }
         
         dispose();
     }//GEN-LAST:event_jButton1ActionPerformed
