@@ -15,6 +15,13 @@ class ListTransferHandler extends TransferHandler {
     /**
      * Perform the actual data import.
      */
+    
+    private Planner mainFrame;
+    
+    ListTransferHandler (Planner parent) {
+        this.mainFrame = parent;
+    }
+    
     @Override
     public boolean importData(TransferHandler.TransferSupport info) {
         String data = null;

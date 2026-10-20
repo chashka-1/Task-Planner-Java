@@ -182,6 +182,7 @@ public class Planner extends javax.swing.JFrame {
                 
         //TODO: somehow change the appearance of this task in Jlist --- 
         //--- i think it's better to do it in showTasks()
+        // ^ Right now displaying the crossing out through HTML
         showTasks(week);
     }
 
@@ -189,6 +190,41 @@ public class Planner extends javax.swing.JFrame {
         //TODO: form popups to enter name/date 
         //AddTaskForm popup = new AddTaskForm(this, true, "aaa");
         //TODO: SQL update task
+    }
+    
+    private void changeTaskPriority(int taskID) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+
+        //TODO: change the task priority (for dragging tasks within days (or between)
+    }
+    
+    private void changeTaskDate(int taskID, LocalDate newDate) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+
+        String changeDateString = "UPDATE task SET date = ? WHERE task_id = ?";
+        
+        try (var pstmt = conn.prepareStatement(changeDateString)) {
+            pstmt.setString(1, newDate.toString());
+            pstmt.setInt(2, taskID);
+            
+            // RUN UPDATE STATUS FUNCTION (function that sets the statuses as overdue or otherwise etc)
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+        //TODO: change the date field of the task into the day it's been dropped to
+        // ALSO ADD NULL CHECK IN DATE FIELDS OF THE ADD/REEMOVE/WHATEVER touches the date field
+    }
+    
+    private void updateStatuses() {
+        //TODO: add functionality to check all dates vs compelted_dates and set statuses to overdue
     }
     
     /**
@@ -199,7 +235,7 @@ public class Planner extends javax.swing.JFrame {
         updateWeekTitles();
         this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
         this.conn = conn;
-        lh = new ListTransferHandler();
+        lh = new ListTransferHandler(this);
         showTasks(week);
         
         MouseAdapter listener = new MouseAdapter() {
@@ -518,9 +554,19 @@ public class Planner extends javax.swing.JFrame {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
 
         for (int i = 0; i < panes.length; i++) {
-            panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+            if (weekStart.plusDays(i).equals(LocalDate.now())) {
+                panes[i].setBorder(BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(java.awt.Color.RED),
+                        weekStart.plusDays(i).format(fmt),
+                        javax.swing.border.TitledBorder.LEFT,
+                        javax.swing.border.TitledBorder.TOP,
+                        null,
+                        java.awt.Color.RED
+                ));
+            } else {
+                panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+            }
         }
-
         var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
         jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
 
