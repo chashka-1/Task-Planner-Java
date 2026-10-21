@@ -16,12 +16,8 @@ public class TaskPlannerJava {
         db.connect();
         
         Planner planner = new Planner(db.getConn());
-        
+        planner.setLocationRelativeTo(null);
         planner.setVisible(true);
-        
-        LocalDate testDate = LocalDate.now();
-        
-//        planner.addTask("Do this roday!", testDate);
         
     }
 }

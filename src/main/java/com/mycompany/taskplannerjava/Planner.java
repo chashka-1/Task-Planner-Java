@@ -149,6 +149,25 @@ public class Planner extends javax.swing.JFrame {
         //TODO: SQL update task
     }
     
+    
+    private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+    
+    private void updateWeekTitles() {
+        JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
+            jScrollPane6, jScrollPane7, jScrollPane8};
+        
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
+
+        for (int i = 0; i < panes.length; i++) {
+            panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+        }
+
+        var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
+
+        jPanel2.revalidate();
+        jPanel2.repaint();
+    }
     /**
      * Creates new form Planner
      */
@@ -263,6 +282,12 @@ public class Planner extends javax.swing.JFrame {
         jPopupMenu1.add(jMenuItem3);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Task Planner");
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Tasks"));
 
@@ -399,10 +424,10 @@ public class Planner extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jButton4)
                         .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 666, Short.MAX_VALUE)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 660, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(6, 6, 6))
@@ -457,29 +482,29 @@ public class Planner extends javax.swing.JFrame {
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
         int dayIndex = arrayIndexOf(weekDays, jListInvoked);
         int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
-        removeTask(taskID);
+        int result = JOptionPane.showConfirmDialog(
+            this, 
+            "Delete this item?", 
+            "Confirm Deletion", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.WARNING_MESSAGE
+        );
+
+        if (result == JOptionPane.YES_OPTION) {
+            removeTask(taskID);
+        }
+
 //        System.out.println(weekStart.plusDays(dayIndex).format(fmtSQL) + " " + dayIndex);
 //        System.out.println(weekStart.plusDays(dayIndex).toString() + " " + dayIndex);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
-    private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-    
-    private void updateWeekTitles() {
-        JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
-            jScrollPane6, jScrollPane7, jScrollPane8};
-        
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        // TODO add your handling code here:
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            getRootPane().requestFocusInWindow();
+        });
+    }//GEN-LAST:event_formWindowOpened
 
-        for (int i = 0; i < panes.length; i++) {
-            panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
-        }
-
-        var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
-        jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
-
-        jPanel2.revalidate();
-        jPanel2.repaint();
-    }
     /**
      * @param args the command line arguments
      */
