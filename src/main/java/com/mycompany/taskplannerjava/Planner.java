@@ -42,7 +42,7 @@ public class Planner extends javax.swing.JFrame {
             readDB(weekStart.plusDays(i), week.get(i));
         }
         week.put(7, new ArrayList<>());
-        readDB(null, week.get(7));
+        readDB(LocalDate.of(-999999999, 01, 01), week.get(7));
     }
     
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {

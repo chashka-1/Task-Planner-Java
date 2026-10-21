@@ -117,7 +117,7 @@ public class AddTaskForm extends javax.swing.JDialog {
 //        addTask(name, )
         String date = jTextField2.getText();
         if (date.isBlank()) {
-            mainFrame.addTask(name, null);
+            mainFrame.addTask(name, LocalDate.of(-999999999, 01, 01));
         } else {
             LocalDate dueDate = LocalDate.parse(jTextField2.getText().trim()); // yyyy-MM-dd
         }
