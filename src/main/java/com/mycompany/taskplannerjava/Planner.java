@@ -10,6 +10,7 @@ import java.time.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Collections;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
@@ -31,7 +32,27 @@ public class Planner extends javax.swing.JFrame {
     public String[] fillModel(ArrayList<Task> day) {
         String[] strings = new String[day.size()];
         for (int i = 0; i < strings.length; i++) {
-            strings[i] = day.get(i).getName();
+            Task task = day.get(i);
+            
+            switch (task.getStatus()) {
+                case "overdue":
+                    // checks if overdue task is dragged into a new, non-overdue day
+                    if (!task.getDueDate().isBefore(LocalDate.now())) {
+                        task.setStatus("active");
+                        strings[i] = task.getName();
+                        break;
+                    }
+                        
+                    strings[i] = "<html><font color=red>"
+                            + task.getName() + "</font></html>";
+                    break;
+                case "completed":
+                    strings[i] = "<html><s>" + task.getName() + "</s></html>";
+                    break;
+                default:
+                    strings[i] = task.getName();
+                    break;
+            }
         }
         return strings;
     }
@@ -71,28 +92,43 @@ public class Planner extends javax.swing.JFrame {
         }
         
         ArrayList<Task> dbTasks = new ArrayList<>();
+        ArrayList<Integer> overdueTaskIDs = new ArrayList<>();
         
         String queryStatement = 
-            "SELECT task_id, name, date_created, date_completed, status, date FROM task WHERE date = ? AND user_id = ?";
-        
+            "SELECT task_id, name, date_created, date_completed, status, date FROM task WHERE date = ?";
+                
         try (var pstmt = conn.prepareStatement(queryStatement)) {
             pstmt.setString(1, date.toString());
-            pstmt.setInt(2, 1); 
             
             var rs = pstmt.executeQuery();
             
             while (rs.next()) {
-                dbTasks.add(new Task(
+                Task task = new Task(
                         rs.getInt("task_id"),
                         rs.getString("name"),
                         LocalDate.parse(rs.getString("date")),
                         LocalDate.parse(rs.getString("date_created")),
-                        rs.getString("status")
-                ));
+                        rs.getString("status"));
+                
+                // checks if fetched task status should be overdue
+                if (task.getDueDate().isBefore(LocalDate.now())
+                        && (task.getDueDate().getYear() > 0) 
+                        && "active".equals(task.getStatus())) {
+                    
+                    task.setStatus("overdue"); 
+                    overdueTaskIDs.add(task.getID());
+                }
+                
+                dbTasks.add(task);
             }
             
         } catch (SQLException e) {
             System.err.println(e.getMessage());
+        }
+        
+        // sets status of affected tasks to overdue in database
+        if (!overdueTaskIDs.isEmpty()) {
+            changeTaskStatuses("overdue", overdueTaskIDs);
         }
 
         for (int i = 0; i < dbTasks.size(); i++) {
@@ -108,13 +144,14 @@ public class Planner extends javax.swing.JFrame {
             return;
         }
         String addStatement = 
-                "INSERT INTO task(name, date_created, date, user_id) VALUES(?,?,?,?)";
+                "INSERT INTO task(name, date_created, date, priority) VALUES(?,?,?,?)";
         
         try (var pstmt = conn.prepareStatement(addStatement)) {
             pstmt.setString(1, name);
             pstmt.setString(2, LocalDate.now().toString());
             pstmt.setString(3, dueDate.toString());
-            pstmt.setInt(4, 1);
+            pstmt.setInt(4, 0);
+            
             pstmt.executeUpdate();
             System.out.println("This should have wo rked.");
         } catch (SQLException e) {
@@ -154,35 +191,37 @@ public class Planner extends javax.swing.JFrame {
         showTasks(week);
     }
     
-    private void completeTask(int taskID) {
+    private void completeTask(int taskID, String status) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
-
+        
+        // allows for uncompletion of tasks
+        String dateCompleted;
+        
+        if ("completed".equals(status)) {
+            status = "active";
+            dateCompleted = "null";
+        } else {
+            status = "completed";
+            dateCompleted = LocalDate.now().toString();
+        }
+        
         String completeStatement = "UPDATE task SET date_completed = ? , "
-                + "status = ? , name = ? || name || ? WHERE task_id =  ?";
+                + "status = ?  WHERE task_id =  ?";
         
         try (var pstmt = conn.prepareStatement(completeStatement)) {
-            pstmt.setString(1, LocalDate.now().toString());
-            pstmt.setString(2, "completed");
+            pstmt.setString(1, dateCompleted);
+            pstmt.setString(2, status);
             pstmt.setInt(3, taskID);
-            
-            // makes task look crossed out in the planner
-            pstmt.setString(3, "<html><s>");
-            pstmt.setString(4, "</s></html>");
-            
-            pstmt.setInt(5, taskID);
             
             pstmt.executeUpdate();
         } catch(SQLException e) {
             System.err.println(e.getMessage());
         }
                 
-        //TODO: somehow change the appearance of this task in Jlist --- 
-        //--- i think it's better to do it in showTasks()
-        // ^ Right now displaying the crossing out through HTML
         showTasks(week);
     }
 
@@ -192,39 +231,60 @@ public class Planner extends javax.swing.JFrame {
         //TODO: SQL update task
     }
     
-    private void changeTaskPriority(int taskID) {
+    void changeTaskLocation(String taskName, int taskPriority, LocalDate newDate) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
 
-        //TODO: change the task priority (for dragging tasks within days (or between)
-    }
-    
-    private void changeTaskDate(int taskID, LocalDate newDate) {
+        String changeDateStatement = "UPDATE task SET date = ? , priority = ? WHERE name = ?";
         
-        if (conn == null) {
-            System.out.println("ERROR: Connection to db not yet established");
-            return;
-        }
-
-        String changeDateString = "UPDATE task SET date = ? WHERE task_id = ?";
-        
-        try (var pstmt = conn.prepareStatement(changeDateString)) {
+        try (var pstmt = conn.prepareStatement(changeDateStatement)) {
             pstmt.setString(1, newDate.toString());
-            pstmt.setInt(2, taskID);
+            pstmt.setInt(2, taskPriority);
+            pstmt.setString(3, taskName);
             
-            // RUN UPDATE STATUS FUNCTION (function that sets the statuses as overdue or otherwise etc)
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Something should have happened");
+            } else {
+                System.out.println("FUCKKKKKK");
+            }
+            
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
-        //TODO: change the date field of the task into the day it's been dropped to
-        // ALSO ADD NULL CHECK IN DATE FIELDS OF THE ADD/REEMOVE/WHATEVER touches the date field
+        
+        showTasks(week);
     }
     
-    private void updateStatuses() {
-        //TODO: add functionality to check all dates vs compelted_dates and set statuses to overdue
+    private void changeTaskStatuses(String newStatus, ArrayList<Integer> overdueIDs) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+        
+        int size = overdueIDs.size();
+        String placeHolders = String.join(",", Collections.nCopies(size, "?"));
+        
+        String changeStatusStatement = "UPDATE task SET status = ? "
+                + "WHERE task_id IN (" + placeHolders + ")";
+
+        try (var pstmt = conn.prepareStatement(changeStatusStatement)) {
+            pstmt.setString(1, newStatus);
+            
+            // sets all of the taskIDs that need to be changed
+            for (int i = 0; i < size; i++) {
+                pstmt.setInt(i + 2, overdueIDs.get(i)); 
+            }
+            
+            pstmt.executeUpdate();
+            
+        } catch(SQLException e) {
+            System.err.println(e.getMessage());
+        }
     }
     
     /**
@@ -533,7 +593,8 @@ public class Planner extends javax.swing.JFrame {
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
         int dayIndex = arrayIndexOf(weekDays, jListInvoked);
         int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
-        completeTask(taskID);
+        String taskStatus = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getStatus();
+        completeTask(taskID, taskStatus);
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
@@ -563,9 +624,13 @@ public class Planner extends javax.swing.JFrame {
                         null,
                         java.awt.Color.RED
                 ));
+
             } else {
                 panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
             }
+            
+            // attaches a date to the pane (used in ListTransferHandler.java)
+            panes[i].putClientProperty("Date", weekStart.plusDays(i));
         }
         var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
         jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));

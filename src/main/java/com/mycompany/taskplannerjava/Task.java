@@ -42,4 +42,12 @@ public class Task {
     public int getID () {
         return id;
     }
+    
+    public String getStatus() {
+        return status;
+    }
+    
+    public void setStatus(String newStatus) {
+        status = newStatus;
+    }
 }
