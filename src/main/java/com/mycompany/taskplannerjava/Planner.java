@@ -10,6 +10,7 @@ import java.time.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Collections;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
@@ -31,7 +32,29 @@ public class Planner extends javax.swing.JFrame {
     public String[] fillModel(ArrayList<Task> day) {
         String[] strings = new String[day.size()];
         for (int i = 0; i < strings.length; i++) {
-            strings[i] = day.get(i).getName();
+            Task task = day.get(i);
+            
+            switch (task.getStatus()) {
+                case "overdue":
+                    // checks if overdue task is dragged into a new, non-overdue day
+                    if (!task.getDueDate().isBefore(LocalDate.now()) 
+                            || (task.getDueDate().getYear() == -999999999)) {
+                        
+                        task.setStatus("active");
+                        strings[i] = task.getName();
+                        break;
+                    }
+                        
+                    strings[i] = "<html><font color=red>"
+                            + task.getName() + "</font></html>";
+                    break;
+                case "completed":
+                    strings[i] = "<html><s>" + task.getName() + "</s></html>";
+                    break;
+                default:
+                    strings[i] = task.getName();
+                    break;
+            }
         }
         return strings;
     }
@@ -41,6 +64,8 @@ public class Planner extends javax.swing.JFrame {
             week.put(i, new ArrayList<>());
             readDB(weekStart.plusDays(i), week.get(i));
         }
+        week.put(7, new ArrayList<>());
+        readDB(LocalDate.of(-999999999, 01, 01), week.get(7));
     }
     
     public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
@@ -71,28 +96,43 @@ public class Planner extends javax.swing.JFrame {
         }
         
         ArrayList<Task> dbTasks = new ArrayList<>();
+        ArrayList<Integer> overdueTaskIDs = new ArrayList<>();
         
         String queryStatement = 
-            "SELECT task_id, name, date_created, date_completed, status, date FROM task WHERE date = ? AND user_id = ?";
-        
+            "SELECT task_id, name, date_created, date_completed, status, date FROM task WHERE date = ?";
+                
         try (var pstmt = conn.prepareStatement(queryStatement)) {
             pstmt.setString(1, date.toString());
-            pstmt.setInt(2, 1); 
             
             var rs = pstmt.executeQuery();
             
             while (rs.next()) {
-                dbTasks.add(new Task(
+                Task task = new Task(
                         rs.getInt("task_id"),
                         rs.getString("name"),
                         LocalDate.parse(rs.getString("date")),
                         LocalDate.parse(rs.getString("date_created")),
-                        rs.getString("status")
-                ));
+                        rs.getString("status"));
+                
+                // checks if fetched task status should be overdue
+                if (task.getDueDate().isBefore(LocalDate.now())
+                        && (task.getDueDate().getYear() > 0) 
+                        && "active".equals(task.getStatus())) {
+                    
+                    task.setStatus("overdue"); 
+                    overdueTaskIDs.add(task.getID());
+                }
+                
+                dbTasks.add(task);
             }
             
         } catch (SQLException e) {
             System.err.println(e.getMessage());
+        }
+        
+        // sets status of affected tasks to overdue in database
+        if (!overdueTaskIDs.isEmpty()) {
+            changeTaskStatuses("overdue", overdueTaskIDs);
         }
 
         for (int i = 0; i < dbTasks.size(); i++) {
@@ -108,13 +148,14 @@ public class Planner extends javax.swing.JFrame {
             return;
         }
         String addStatement = 
-                "INSERT INTO task(name, date_created, date, user_id) VALUES(?,?,?,?)";
+                "INSERT INTO task(name, date_created, date, priority) VALUES(?,?,?,?)";
         
         try (var pstmt = conn.prepareStatement(addStatement)) {
             pstmt.setString(1, name);
             pstmt.setString(2, LocalDate.now().toString());
             pstmt.setString(3, dueDate.toString());
-            pstmt.setInt(4, 1);
+            pstmt.setInt(4, 0);
+            
             pstmt.executeUpdate();
             System.out.println("This should have wo rked.");
         } catch (SQLException e) {
@@ -154,34 +195,37 @@ public class Planner extends javax.swing.JFrame {
         showTasks(week);
     }
     
-    private void completeTask(int taskID) {
+    private void completeTask(int taskID, String status) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
-
+        
+        // allows for uncompletion of tasks
+        String dateCompleted;
+        
+        if ("completed".equals(status)) {
+            status = "active";
+            dateCompleted = "null";
+        } else {
+            status = "completed";
+            dateCompleted = LocalDate.now().toString();
+        }
+        
         String completeStatement = "UPDATE task SET date_completed = ? , "
-                + "status = ? , name = ? || name || ? WHERE task_id =  ?";
+                + "status = ?  WHERE task_id =  ?";
         
         try (var pstmt = conn.prepareStatement(completeStatement)) {
-            pstmt.setString(1, LocalDate.now().toString());
-            pstmt.setString(2, "completed");
+            pstmt.setString(1, dateCompleted);
+            pstmt.setString(2, status);
             pstmt.setInt(3, taskID);
-            
-            // makes task look crossed out in the planner
-            pstmt.setString(3, "<html><s>");
-            pstmt.setString(4, "</s></html>");
-            
-            pstmt.setInt(5, taskID);
             
             pstmt.executeUpdate();
         } catch(SQLException e) {
             System.err.println(e.getMessage());
         }
                 
-        //TODO: somehow change the appearance of this task in Jlist --- 
-        //--- i think it's better to do it in showTasks()
         showTasks(week);
     }
 
@@ -190,6 +234,62 @@ public class Planner extends javax.swing.JFrame {
         //AddTaskForm popup = new AddTaskForm(this, true, "aaa");
         //TODO: SQL update task
     }
+
+    void changeTaskLocation(String taskName, int taskPriority, LocalDate newDate) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+
+        String changeDateStatement = "UPDATE task SET date = ? , priority = ? WHERE name = ?";
+        
+        try (var pstmt = conn.prepareStatement(changeDateStatement)) {
+            pstmt.setString(1, newDate.toString());
+            pstmt.setInt(2, taskPriority);
+            pstmt.setString(3, taskName);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println(newDate.toString());
+            } else {
+                System.out.println("FUCKKKKKK" + " " + newDate.toString());
+            }
+            
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+        
+        showTasks(week);
+    }
+    
+    private void changeTaskStatuses(String newStatus, ArrayList<Integer> overdueIDs) {
+        
+        if (conn == null) {
+            System.out.println("ERROR: Connection to db not yet established");
+            return;
+        }
+        
+        int size = overdueIDs.size();
+        String placeHolders = String.join(",", Collections.nCopies(size, "?"));
+        
+        String changeStatusStatement = "UPDATE task SET status = ? "
+                + "WHERE task_id IN (" + placeHolders + ")";
+
+        try (var pstmt = conn.prepareStatement(changeStatusStatement)) {
+            pstmt.setString(1, newStatus);
+            
+            // sets all of the taskIDs that need to be changed
+            for (int i = 0; i < size; i++) {
+                pstmt.setInt(i + 2, overdueIDs.get(i)); 
+            }
+            
+            pstmt.executeUpdate();
+            
+        } catch(SQLException e) {
+            System.err.println(e.getMessage());
+        }
+    }
     
     /**
      * Creates new form Planner
@@ -197,9 +297,9 @@ public class Planner extends javax.swing.JFrame {
     public Planner(Connection conn) {
         initComponents();
         updateWeekTitles();
-        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7};
+        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7, jList8};
         this.conn = conn;
-        lh = new ListTransferHandler();
+        lh = new ListTransferHandler(this);
         showTasks(week);
         
         MouseAdapter listener = new MouseAdapter() {
@@ -305,14 +405,15 @@ public class Planner extends javax.swing.JFrame {
         jPopupMenu1.add(jMenuItem3);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Task Planner");
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         jScrollPane1.setBorder(javax.swing.BorderFactory.createTitledBorder("Tasks"));
 
-        jList8.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jList8.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jList8.setDragEnabled(true);
         jList8.setDropMode(javax.swing.DropMode.INSERT);
@@ -426,9 +527,9 @@ public class Planner extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jScrollPane1))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 781, Short.MAX_VALUE))
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 673, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -446,10 +547,10 @@ public class Planner extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jButton4)
                         .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 666, Short.MAX_VALUE)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 660, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(6, 6, 6))
@@ -497,17 +598,37 @@ public class Planner extends javax.swing.JFrame {
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
         int dayIndex = arrayIndexOf(weekDays, jListInvoked);
         int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
-        completeTask(taskID);
+        String taskStatus = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getStatus();
+        completeTask(taskID, taskStatus);
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
         int dayIndex = arrayIndexOf(weekDays, jListInvoked);
         int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
-        removeTask(taskID);
+        int result = JOptionPane.showConfirmDialog(
+            this, 
+            "Delete this item?", 
+            "Confirm Deletion", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.WARNING_MESSAGE
+        );
+
+        if (result == JOptionPane.YES_OPTION) {
+            removeTask(taskID);
+        }
+
 //        System.out.println(weekStart.plusDays(dayIndex).format(fmtSQL) + " " + dayIndex);
 //        System.out.println(weekStart.plusDays(dayIndex).toString() + " " + dayIndex);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        // TODO add your handling code here:
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            getRootPane().requestFocusInWindow();
+        });
+    }//GEN-LAST:event_formWindowOpened
+
 
     private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     
@@ -515,10 +636,27 @@ public class Planner extends javax.swing.JFrame {
         JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
             jScrollPane6, jScrollPane7, jScrollPane8};
         
+        jScrollPane1.putClientProperty("Date", LocalDate.of(-999999999, 01, 01));
+        
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
 
         for (int i = 0; i < panes.length; i++) {
-            panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+            if (weekStart.plusDays(i).equals(LocalDate.now())) {
+                panes[i].setBorder(BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(java.awt.Color.GREEN),
+                        weekStart.plusDays(i).format(fmt),
+                        javax.swing.border.TitledBorder.LEFT,
+                        javax.swing.border.TitledBorder.TOP,
+                        null,
+                        java.awt.Color.GREEN.darker()
+                ));
+
+            } else {
+                panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
+            }
+            
+            // attaches a date to the pane (used in ListTransferHandler.java)
+            panes[i].putClientProperty("Date", weekStart.plusDays(i));
         }
 
         var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);

@@ -9,15 +9,26 @@ import java.awt.datatransfer.*;
 import javax.swing.*;
 import static javax.swing.TransferHandler.COPY_OR_MOVE;
 import static javax.swing.TransferHandler.MOVE;
+import java.time.LocalDate;
 
 class ListTransferHandler extends TransferHandler {
 
     /**
      * Perform the actual data import.
      */
+    
+    private Planner mainFrame;
+    
+    ListTransferHandler (Planner parent) {
+        this.mainFrame = parent;
+    }
+    
     @Override
     public boolean importData(TransferHandler.TransferSupport info) {
-        String data = null;
+        String taskName = null;
+        JList targetDay;
+        JScrollPane parentPane;
+        LocalDate targetDate;
 
         //If we can't handle the import, bail now.
         if (!canImport(info)) {
@@ -28,7 +39,15 @@ class ListTransferHandler extends TransferHandler {
         DefaultListModel model = (DefaultListModel)list.getModel();
         //Fetch the data -- bail if this fails
         try {
-            data = (String)info.getTransferable().getTransferData(DataFlavor.stringFlavor);
+            taskName = (String)info.getTransferable().getTransferData(DataFlavor.stringFlavor);
+            taskName = taskName.replaceAll("<[^>]*>", "");
+            
+            // identifies the pane into which task is dropped as well as the pane's date
+            targetDay = (JList) info.getComponent(); 
+            parentPane = (JScrollPane) 
+                    SwingUtilities.getAncestorOfClass(JScrollPane.class, targetDay);
+            targetDate = (LocalDate) parentPane.getClientProperty("Date");
+            
         } catch (UnsupportedFlavorException ufe) {
             System.out.println("importData: unsupported data flavor");
             return false;
@@ -37,14 +56,15 @@ class ListTransferHandler extends TransferHandler {
             return false;
         }
 
-        if (info.isDrop()) { //This is a drop
+        if (info.isDrop()) { //This is a drop 
             JList.DropLocation dl = (JList.DropLocation)info.getDropLocation();
             int index = dl.getIndex();
             if (dl.isInsert()) {
-                model.add(index, data);
+                mainFrame.changeTaskLocation(taskName, index, targetDate);
+                System.out.println(index);
                 return true;
             } else {
-                model.set(index, data);
+                model.set(index, taskName);
                 return true;
             }
         } else { //This is a paste
@@ -52,10 +72,10 @@ class ListTransferHandler extends TransferHandler {
             // if there is a valid selection,
             // insert data after the selection
             if (index >= 0) {
-                model.add(list.getSelectedIndex()+1, data);
+                model.add(list.getSelectedIndex()+1, taskName);
             // else append to the end of the list
             } else {
-                model.addElement(data);
+                model.addElement(taskName);
             }
             return true;
         }
@@ -85,13 +105,7 @@ class ListTransferHandler extends TransferHandler {
      */
     @Override
     protected void exportDone(JComponent c, Transferable data, int action) {
-        if (action != MOVE) {
-            return;
-        }
-        JList list = (JList)c;
-        DefaultListModel model = (DefaultListModel)list.getModel();
-        int index = list.getSelectedIndex();
-        model.remove(index);
+
     }
 
     @Override

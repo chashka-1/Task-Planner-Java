@@ -6,7 +6,9 @@ package com.mycompany.taskplannerjava;
 
 import java.time.LocalDate;
 import javax.swing.JFrame;
-
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
+import java.time.DayOfWeek;
 /**
  *
  * @author Sofi
@@ -19,17 +21,28 @@ public class AddTaskForm extends javax.swing.JDialog {
      * Creates new form AddTaskForm
      */
     private Planner mainFrame;
+    private DatePicker datePicker;
+    
+    private void setupDatePicker() {
+        DatePickerSettings settings = new DatePickerSettings(java.util.Locale.ENGLISH);
+        settings.setFirstDayOfWeek(DayOfWeek.MONDAY);
+        datePicker = new DatePicker(settings);
+        datePanel.add(datePicker, java.awt.BorderLayout.CENTER);
+        pack();
+    }
     
     public AddTaskForm(Planner parent, boolean modal) {
         super(parent, modal);
-        this.mainFrame = parent;
         initComponents();
+        this.mainFrame = parent;
+        setupDatePicker();
     }
     
     public AddTaskForm(Planner parent, boolean modal, String taskName) {
         super(parent, modal);
-        this.mainFrame = parent;
         initComponents();
+        this.mainFrame = parent;
+        setupDatePicker();
         jTextField1.setText(taskName);
     }
     /**
@@ -48,7 +61,7 @@ public class AddTaskForm extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
+        datePanel = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Create New Task");
@@ -68,15 +81,13 @@ public class AddTaskForm extends javax.swing.JDialog {
 
         jLabel1.setText("New task name");
         jPanel1.add(jLabel1);
-
-        jTextField1.addActionListener(this::jTextField1ActionPerformed);
         jPanel1.add(jTextField1);
 
         jLabel2.setText("Due date");
         jPanel1.add(jLabel2);
 
-        jTextField2.addActionListener(this::jTextField2ActionPerformed);
-        jPanel1.add(jTextField2);
+        datePanel.setLayout(new java.awt.BorderLayout());
+        jPanel1.add(datePanel);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -88,14 +99,14 @@ public class AddTaskForm extends javax.swing.JDialog {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(90, 90, 90)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 284, Short.MAX_VALUE))
                 .addGap(20, 20, 20))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(22, 22, 22)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(20, 20, 20))
@@ -106,29 +117,34 @@ public class AddTaskForm extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
-
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
         String name = jTextField1.getText();
-//        LocalDate dueDate = jTextField2.getText();
-//        addTask(name, )
-        LocalDate dueDate = LocalDate.parse(jTextField2.getText().trim()); // yyyy-MM-dd
-        mainFrame.addTask(name, dueDate);
+        LocalDate dueDate = datePicker.getDate();
+        
+        if (name.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(this, 
+                    "Please enter a task name.");
+            return;
+        }
+
+        if (dueDate == null) {
+            mainFrame.addTask(name, LocalDate.of(-999999999, 01, 01));
+        } else {
+            if (dueDate.getYear() <= 0) {
+                javax.swing.JOptionPane.showMessageDialog(this, 
+                    "Please enter a valid date.");
+                return;
+            }
+            mainFrame.addTask(name, dueDate);        
+        }
         
         dispose();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
         dispose();
     }//GEN-LAST:event_jButton2ActionPerformed
-
-    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField2ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -168,6 +184,7 @@ public class AddTaskForm extends javax.swing.JDialog {
 //    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel datePanel;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
@@ -175,6 +192,5 @@ public class AddTaskForm extends javax.swing.JDialog {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
 }

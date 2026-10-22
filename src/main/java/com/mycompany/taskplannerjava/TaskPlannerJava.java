@@ -11,17 +11,12 @@ import java.time.*;
 public class TaskPlannerJava {
  
     public static void main(String[] args) {
-        System.out.println("I'm pretty sure we're not using this file anymore i moved the db stuff to database.java");
         Database db = new Database();
         db.connect();
         
         Planner planner = new Planner(db.getConn());
-        
+        planner.setLocationRelativeTo(null);
         planner.setVisible(true);
-        
-        LocalDate testDate = LocalDate.now();
-        
-//        planner.addTask("Do this roday!", testDate);
         
     }
 }
