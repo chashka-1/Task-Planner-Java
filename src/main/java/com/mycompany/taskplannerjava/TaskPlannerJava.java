@@ -11,7 +11,6 @@ import java.time.*;
 public class TaskPlannerJava {
  
     public static void main(String[] args) {
-        System.out.println("I'm pretty sure we're not using this file anymore i moved the db stuff to database.java");
         Database db = new Database();
         db.connect();
         
