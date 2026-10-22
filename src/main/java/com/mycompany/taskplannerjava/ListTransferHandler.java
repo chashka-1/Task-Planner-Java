@@ -12,8 +12,6 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
-import static javax.swing.TransferHandler.COPY_OR_MOVE;
-import static javax.swing.TransferHandler.MOVE;
 
 class ListTransferHandler extends TransferHandler {
     private final Planner mainFrame;
@@ -29,14 +27,13 @@ class ListTransferHandler extends TransferHandler {
         JScrollPane parentPane;
         LocalDate targetDate;
 
-        //If we can't handle the import, bail now.
         if (!canImport(info)) {
             return false;
         }
 
         JList list = (JList) info.getComponent();
         DefaultListModel model = (DefaultListModel) list.getModel();
-        //Fetch the data -- bail if this fails
+
         try {
             taskName = (String) info.getTransferable()
                     .getTransferData(DataFlavor.stringFlavor);
@@ -47,38 +44,28 @@ class ListTransferHandler extends TransferHandler {
             parentPane = (JScrollPane) SwingUtilities
                     .getAncestorOfClass(JScrollPane.class, targetDay);
             targetDate = (LocalDate) parentPane.getClientProperty("Date");
-        } catch (UnsupportedFlavorException ufe) {
-            System.out.println("importData: unsupported data flavor");
-            return false;
-        } catch (IOException ioe) {
-            System.out.println("importData: I/O exception");
+        } catch (UnsupportedFlavorException | IOException e) {
+            System.out.println(e.getMessage());
             return false;
         }
 
-        if (info.isDrop()) { //This is a drop 
+        if (info.isDrop()) {
             JList.DropLocation dl = (JList.DropLocation) info.getDropLocation();
+            var taskID = mainFrame.gettingTaskID((JList) info.getComponent());
+
             int index = dl.getIndex();
             
             if (dl.isInsert()) {
-                mainFrame.changeTaskLocation(taskName, index, targetDate);
+                
+                mainFrame.changeTaskLocation(taskID, index, targetDate);
                 System.out.println(index);
                 return true;
             } else {
                 model.set(index, taskName);
                 return true;
             }
-        } else { //This is a paste
-            int index = list.getSelectedIndex();
-            // if there is a valid selection,
-            // insert data after the selection
-            if (index >= 0) {
-                model.add(list.getSelectedIndex() + 1, taskName);
-            // else append to the end of the list
-            } else {
-                model.addElement(taskName);
-            }
-            return true;
         }
+        return false;
     }
 
     @Override
@@ -88,27 +75,13 @@ class ListTransferHandler extends TransferHandler {
         return new StringSelection(value);
     }
 
-    /**
-     * The list handles both copy and move actions.
-     */
     @Override
     public int getSourceActions(JComponent c) {
-        return COPY_OR_MOVE;
-    }
-
-    /** 
-     * When the export is complete, remove the old list entry if the
-     * action was a move.
-     */
-    @Override
-    protected void exportDone(JComponent c, Transferable data, int action) {
-
+        return MOVE;
     }
 
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-        //checking if import Strings
         return support.isDataFlavorSupported(DataFlavor.stringFlavor);
     }
 }
-

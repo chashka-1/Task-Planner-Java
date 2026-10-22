@@ -1,5 +1,6 @@
 package com.mycompany.taskplannerjava;
 
+import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.Connection;
@@ -11,6 +12,7 @@ import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -112,7 +114,9 @@ public class Planner extends javax.swing.JFrame {
                         rs.getString("name"),
                         LocalDate.parse(rs.getString("date")),
                         LocalDate.parse(rs.getString("date_created")),
-                        rs.getString("status"));
+                        rs.getString("status"),
+                        rs.getInt("priority")
+                );
                 
                 // checks if fetched task status should be overdue
                 if (task.getDueDate().isBefore(LocalDate.now())
@@ -139,7 +143,11 @@ public class Planner extends javax.swing.JFrame {
             if (dbTasks.get(i).getDueDate().equals(date)) {
                 day.add(dbTasks.get(i));
             }
-        }        
+        }
+    }
+    
+    public static void sort(ArrayList<Task> list) {
+        list.sort(Comparator.comparingInt(Task::getPriority));
     }
     
     public void addTask(String name, LocalDate dueDate) {
@@ -156,9 +164,7 @@ public class Planner extends javax.swing.JFrame {
             pstmt.setString(2, LocalDate.now().toString());
             pstmt.setString(3, dueDate.toString());
             pstmt.setInt(4, 0);
-            
             pstmt.executeUpdate();
-            System.out.println("This should have wo rked.");
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
@@ -223,7 +229,7 @@ public class Planner extends javax.swing.JFrame {
     }
 
     void changeTaskLocation(
-            String taskName, 
+            int taskID, 
             int taskPriority, 
             LocalDate newDate) {
         
@@ -233,12 +239,12 @@ public class Planner extends javax.swing.JFrame {
         }
 
         String changeDateStatement = "UPDATE task SET date = ? , priority = ? "
-                + "WHERE name = ?";
+                + "WHERE task_id = ?";
         
         try (var pstmt = conn.prepareStatement(changeDateStatement)) {
             pstmt.setString(1, newDate.toString());
             pstmt.setInt(2, taskPriority);
-            pstmt.setString(3, taskName);
+            pstmt.setInt(1, taskID);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e.getMessage());
@@ -312,6 +318,11 @@ public class Planner extends javax.swing.JFrame {
 
         jPanel2.revalidate();
         jPanel2.repaint();
+    }
+    
+    public int gettingTaskID(JList invoker) {
+        int dayIndex = arrayIndexOf(weekDays, invoker);
+        return week.get(dayIndex).get(invoker.getSelectedIndex()).getID();
     }
     
     public Planner(Connection conn) {
@@ -575,10 +586,8 @@ public class Planner extends javax.swing.JFrame {
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
-        int dayIndex = arrayIndexOf(weekDays, jListInvoked);
-        int taskID = week.get(dayIndex)
-                .get(jListInvoked.getSelectedIndex()).getID();
-        String taskStatus = week.get(dayIndex)
+        int taskID = gettingTaskID(jListInvoked);
+        String taskStatus = week.get(arrayIndexOf(weekDays, jListInvoked))
                 .get(jListInvoked.getSelectedIndex()).getStatus();
         
         completeTask(taskID, taskStatus);
@@ -586,9 +595,7 @@ public class Planner extends javax.swing.JFrame {
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
-        int dayIndex = arrayIndexOf(weekDays, jListInvoked);
-        int taskID = week.get(dayIndex)
-                .get(jListInvoked.getSelectedIndex()).getID();
+        int taskID = gettingTaskID(jListInvoked);
         int result = JOptionPane.showConfirmDialog(
             this, 
             "Delete this item?", 
