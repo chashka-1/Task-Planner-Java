@@ -1,25 +1,22 @@
 package com.mycompany.taskplannerjava;
 
-/*
- * ListTransferHandler.java is used by the ListCutPaste example.
- */
-
-import java.io.*;
-import java.awt.datatransfer.*;
-import javax.swing.*;
-import static javax.swing.TransferHandler.COPY_OR_MOVE;
-import static javax.swing.TransferHandler.MOVE;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 import java.time.LocalDate;
+import javax.swing.DefaultListModel;
+import javax.swing.JComponent;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 
 class ListTransferHandler extends TransferHandler {
-
-    /**
-     * Perform the actual data import.
-     */
+    private final Planner mainFrame;
     
-    private Planner mainFrame;
-    
-    ListTransferHandler (Planner parent) {
+    ListTransferHandler(Planner parent) {
         this.mainFrame = parent;
     }
     
@@ -35,19 +32,19 @@ class ListTransferHandler extends TransferHandler {
             return false;
         }
 
-        JList list = (JList)info.getComponent();
-        DefaultListModel model = (DefaultListModel)list.getModel();
+        JList list = (JList) info.getComponent();
+        DefaultListModel model = (DefaultListModel) list.getModel();
         //Fetch the data -- bail if this fails
         try {
-            taskName = (String)info.getTransferable().getTransferData(DataFlavor.stringFlavor);
+            taskName = (String) info.getTransferable()
+                    .getTransferData(DataFlavor.stringFlavor);
             taskName = taskName.replaceAll("<[^>]*>", "");
             
             // identifies the pane into which task is dropped as well as the pane's date
             targetDay = (JList) info.getComponent(); 
-            parentPane = (JScrollPane) 
-                    SwingUtilities.getAncestorOfClass(JScrollPane.class, targetDay);
+            parentPane = (JScrollPane) SwingUtilities
+                    .getAncestorOfClass(JScrollPane.class, targetDay);
             targetDate = (LocalDate) parentPane.getClientProperty("Date");
-            
         } catch (UnsupportedFlavorException ufe) {
             System.out.println("importData: unsupported data flavor");
             return false;
@@ -57,8 +54,9 @@ class ListTransferHandler extends TransferHandler {
         }
 
         if (info.isDrop()) { //This is a drop 
-            JList.DropLocation dl = (JList.DropLocation)info.getDropLocation();
+            JList.DropLocation dl = (JList.DropLocation) info.getDropLocation();
             int index = dl.getIndex();
+            
             if (dl.isInsert()) {
                 mainFrame.changeTaskLocation(taskName, index, targetDate);
                 System.out.println(index);
@@ -72,7 +70,7 @@ class ListTransferHandler extends TransferHandler {
             // if there is a valid selection,
             // insert data after the selection
             if (index >= 0) {
-                model.add(list.getSelectedIndex()+1, taskName);
+                model.add(list.getSelectedIndex() + 1, taskName);
             // else append to the end of the list
             } else {
                 model.addElement(taskName);
@@ -81,13 +79,10 @@ class ListTransferHandler extends TransferHandler {
         }
     }
 
-    /**
-     * Bundle up the data for export.
-     */
     @Override
     protected Transferable createTransferable(JComponent c) {
-        JList list = (JList)c;
-        String value = (String)list.getSelectedValue();
+        JList list = (JList) c;
+        String value = (String) list.getSelectedValue();
         return new StringSelection(value);
     }
 

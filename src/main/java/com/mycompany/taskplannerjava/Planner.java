@@ -1,30 +1,31 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package com.mycompany.taskplannerjava;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.time.*;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Collections;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
-import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 
-/**
- *
- * @author Sofi
- */
 public class Planner extends javax.swing.JFrame {
     
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Planner.class.getName());
+    private static final java.util.logging.Logger LOGGER = 
+            java.util.logging.Logger.getLogger(Planner.class.getName());
     // used to execute SQL statements
     private Connection conn;
+    private LocalDate weekStart = LocalDate.now()
+            .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     HashMap<Integer, ArrayList<Task>> week = new HashMap<>();
     JList[] weekDays;
     ListTransferHandler lh;
@@ -35,7 +36,7 @@ public class Planner extends javax.swing.JFrame {
             Task task = day.get(i);
             
             switch (task.getStatus()) {
-                case "overdue":
+                case "overdue" -> {
                     // checks if overdue task is dragged into a new, non-overdue day
                     if (!task.getDueDate().isBefore(LocalDate.now()) 
                             || (task.getDueDate().getYear() == -999999999)) {
@@ -47,13 +48,10 @@ public class Planner extends javax.swing.JFrame {
                         
                     strings[i] = "<html><font color=red>"
                             + task.getName() + "</font></html>";
-                    break;
-                case "completed":
-                    strings[i] = "<html><s>" + task.getName() + "</s></html>";
-                    break;
-                default:
-                    strings[i] = task.getName();
-                    break;
+                }
+                case "completed" -> strings[i] = "<html><s>" + task.getName() 
+                        + "</s></html>";
+                default -> strings[i] = task.getName();
             }
         }
         return strings;
@@ -64,12 +62,14 @@ public class Planner extends javax.swing.JFrame {
             week.put(i, new ArrayList<>());
             readDB(weekStart.plusDays(i), week.get(i));
         }
+        
         week.put(7, new ArrayList<>());
         readDB(LocalDate.of(-999999999, 01, 01), week.get(7));
     }
     
-    public void showTasks(HashMap<Integer, ArrayList<Task>> week) {
+    private void showTasks(HashMap<Integer, ArrayList<Task>> week) {
         fillWeek(week);
+        
         for (int i = 0; i < week.size(); i++) {
             DefaultListModel<String> model = new DefaultListModel<>();
             
@@ -81,14 +81,13 @@ public class Planner extends javax.swing.JFrame {
             
             String[] strings = fillModel(week.get(i));
             
-            for (String task : strings) {
+            for (String task: strings) {
                 model.addElement(task);
-//                model.getElementAt(i)
             }
         }      
     }
     
-    public void readDB (LocalDate date, ArrayList<Task> day) {
+    public void readDB(LocalDate date, ArrayList<Task> day) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
@@ -99,7 +98,8 @@ public class Planner extends javax.swing.JFrame {
         ArrayList<Integer> overdueTaskIDs = new ArrayList<>();
         
         String queryStatement = 
-            "SELECT task_id, name, date_created, date_completed, status, date FROM task WHERE date = ?";
+            "SELECT task_id, name, date_created, date_completed, status, "
+                + "date FROM task WHERE date = ?";
                 
         try (var pstmt = conn.prepareStatement(queryStatement)) {
             pstmt.setString(1, date.toString());
@@ -142,13 +142,14 @@ public class Planner extends javax.swing.JFrame {
         }        
     }
     
-    public void addTask (String name, LocalDate dueDate) {
+    public void addTask(String name, LocalDate dueDate) {
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
         String addStatement = 
-                "INSERT INTO task(name, date_created, date, priority) VALUES(?,?,?,?)";
+                "INSERT INTO task(name, date_created, date, priority) "
+                + "VALUES(?,?,?,?)";
         
         try (var pstmt = conn.prepareStatement(addStatement)) {
             pstmt.setString(1, name);
@@ -170,7 +171,7 @@ public class Planner extends javax.swing.JFrame {
         return list.indexOf(target);
     }
     
-    public void removeTask (int taskID) {
+    public void removeTask(int taskID) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
@@ -180,14 +181,6 @@ public class Planner extends javax.swing.JFrame {
         
         try (var pstmt = conn.prepareStatement(removeStatement)) {
             pstmt.setInt(1, taskID);
-            
-            int affectedRows = pstmt.executeUpdate();
-            
-            if (affectedRows > 0) {
-                System.out.println("Task with ID " + taskID + " deleted successfuly.");
-            } else {
-                System.out.println("No record with ID " + taskID + " found.");
-            }
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
@@ -222,39 +215,30 @@ public class Planner extends javax.swing.JFrame {
             pstmt.setInt(3, taskID);
             
             pstmt.executeUpdate();
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
                 
         showTasks(week);
     }
 
-    private void editTask(int taskID) {
-        //TODO: form popups to enter name/date 
-        //AddTaskForm popup = new AddTaskForm(this, true, "aaa");
-        //TODO: SQL update task
-    }
-
-    void changeTaskLocation(String taskName, int taskPriority, LocalDate newDate) {
+    void changeTaskLocation(
+            String taskName, 
+            int taskPriority, 
+            LocalDate newDate) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
 
-        String changeDateStatement = "UPDATE task SET date = ? , priority = ? WHERE name = ?";
+        String changeDateStatement = "UPDATE task SET date = ? , priority = ? "
+                + "WHERE name = ?";
         
         try (var pstmt = conn.prepareStatement(changeDateStatement)) {
             pstmt.setString(1, newDate.toString());
             pstmt.setInt(2, taskPriority);
             pstmt.setString(3, taskName);
-            
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println(newDate.toString());
-            } else {
-                System.out.println("FUCKKKKKK" + " " + newDate.toString());
-            }
             
         } catch (SQLException e) {
             System.err.println(e.getMessage());
@@ -263,7 +247,8 @@ public class Planner extends javax.swing.JFrame {
         showTasks(week);
     }
     
-    private void changeTaskStatuses(String newStatus, ArrayList<Integer> overdueIDs) {
+    private void changeTaskStatuses(String newStatus, 
+            ArrayList<Integer> overdueIDs) {
         
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
@@ -286,18 +271,54 @@ public class Planner extends javax.swing.JFrame {
             
             pstmt.executeUpdate();
             
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
     }
     
-    /**
-     * Creates new form Planner
-     */
+    private void updateWeekTitles() {
+        JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, 
+            jScrollPane5, jScrollPane6, jScrollPane7, jScrollPane8};
+        
+        jScrollPane1.putClientProperty("Date", 
+                LocalDate.of(-999999999, 01, 01));
+        
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", 
+                java.util.Locale.ENGLISH);
+
+        for (int i = 0; i < panes.length; i++) {
+            if (weekStart.plusDays(i).equals(LocalDate.now())) {
+                panes[i].setBorder(BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(java.awt.Color.GREEN),
+                        weekStart.plusDays(i).format(fmt),
+                        javax.swing.border.TitledBorder.LEFT,
+                        javax.swing.border.TitledBorder.TOP,
+                        null,
+                        java.awt.Color.GREEN.darker()
+                ));
+
+            } else {
+                panes[i].setBorder(BorderFactory
+                        .createTitledBorder(weekStart.plusDays(i).format(fmt)));
+            }
+            
+            // attaches a date to the pane (used in ListTransferHandler.java)
+            panes[i].putClientProperty("Date", weekStart.plusDays(i));
+        }
+
+        var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        jPanel2.setBorder(BorderFactory
+                .createTitledBorder("Week " + weekNumber));
+
+        jPanel2.revalidate();
+        jPanel2.repaint();
+    }
+    
     public Planner(Connection conn) {
         initComponents();
         updateWeekTitles();
-        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, jList5, jList6, jList7, jList8};
+        this.weekDays = new JList[]{jList1, jList2, jList3, jList4, 
+            jList5, jList6, jList7, jList8};
         this.conn = conn;
         lh = new ListTransferHandler(this);
         showTasks(week);
@@ -307,13 +328,13 @@ public class Planner extends javax.swing.JFrame {
             public void mousePressed(MouseEvent e) {
                 showPopup(e);
             }
+            
             @Override 
             public void mouseReleased(MouseEvent e) { 
                 showPopup(e);
             }
 
             private void showPopup(MouseEvent e) {
-                
                 if (!e.isPopupTrigger()) {
                     return;
                 }
@@ -321,47 +342,27 @@ public class Planner extends javax.swing.JFrame {
                 JList<String> list = (JList<String>) e.getComponent();
                 int index = list.locationToIndex(e.getPoint());
                 
-                if (index >= 0 && list.getCellBounds(index, index).contains(e.getPoint())) {
+                if (index >= 0 && list.getCellBounds(index, index)
+                        .contains(e.getPoint())) {
                     list.setSelectedIndex(index);
                     jPopupMenu1.show(list, e.getX(), e.getY());
-                } 
-                else {
+                } else {
                     list.clearSelection();
                 }
             }
-            
-            //wanted to try to fix built-in selection of jlists
-//            private void removeSelection(MouseEvent e) {
-//                
-//                JList<String> list = (JList<String>) e.getComponent();
-//                int minInd = list.getMinSelectionIndex();
-//                int maxInd = list.getMaxSelectionIndex();
-//                
-//                if (list.getCellBounds(minInd, maxInd) != null && !list.getCellBounds(minInd, maxInd).contains(e.getPoint())) {
-//                    list.clearSelection();
-//                } 
-//                else {
-//                    list.clearSelection();
-//                }
-//            }
         };
+        
         for (JList l: weekDays) {
             l.addMouseListener(listener);
             l.setTransferHandler(lh);
         }
     }
     
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         jPopupMenu1 = new javax.swing.JPopupMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
         jMenuItem3 = new javax.swing.JMenuItem();
         jPanel1 = new javax.swing.JPanel();
@@ -384,17 +385,10 @@ public class Planner extends javax.swing.JFrame {
         jList7 = new javax.swing.JList<>();
         jPanel3 = new javax.swing.JPanel();
         jButton2 = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
-
-        jMenuItem1.setText("Edit");
-        jMenuItem1.setName(""); // NOI18N
-        jMenuItem1.addActionListener(this::jMenuItem1ActionPerformed);
-        jPopupMenu1.add(jMenuItem1);
-        jMenuItem1.getAccessibleContext().setAccessibleDescription("");
 
         jMenuItem2.setText("Mark as completed");
         jMenuItem2.addActionListener(this::jMenuItem2ActionPerformed);
@@ -487,10 +481,6 @@ public class Planner extends javax.swing.JFrame {
         jButton2.addActionListener(this::jButton2ActionPerformed);
         jPanel3.add(jButton2);
 
-        jButton1.setText("Remove");
-        jButton1.addActionListener(this::jButton1ActionPerformed);
-        jPanel3.add(jButton1);
-
         jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         jLabel1.setText("Task Planner");
         jLabel1.setToolTipText("");
@@ -526,10 +516,10 @@ public class Planner extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 117, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 673, Short.MAX_VALUE))
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 708, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -583,29 +573,22 @@ public class Planner extends javax.swing.JFrame {
         popup.setVisible(true);
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        //remove button here is not needed anymore
-    }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
-        int dayIndex = arrayIndexOf(weekDays, jListInvoked);
-        int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
-        editTask(taskID);
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
-
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
         int dayIndex = arrayIndexOf(weekDays, jListInvoked);
-        int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
-        String taskStatus = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getStatus();
+        int taskID = week.get(dayIndex)
+                .get(jListInvoked.getSelectedIndex()).getID();
+        String taskStatus = week.get(dayIndex)
+                .get(jListInvoked.getSelectedIndex()).getStatus();
+        
         completeTask(taskID, taskStatus);
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
         JList<String> jListInvoked = (JList<String>) jPopupMenu1.getInvoker();
         int dayIndex = arrayIndexOf(weekDays, jListInvoked);
-        int taskID = week.get(dayIndex).get(jListInvoked.getSelectedIndex()).getID();
+        int taskID = week.get(dayIndex)
+                .get(jListInvoked.getSelectedIndex()).getID();
         int result = JOptionPane.showConfirmDialog(
             this, 
             "Delete this item?", 
@@ -617,82 +600,15 @@ public class Planner extends javax.swing.JFrame {
         if (result == JOptionPane.YES_OPTION) {
             removeTask(taskID);
         }
-
-//        System.out.println(weekStart.plusDays(dayIndex).format(fmtSQL) + " " + dayIndex);
-//        System.out.println(weekStart.plusDays(dayIndex).toString() + " " + dayIndex);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        // TODO add your handling code here:
         javax.swing.SwingUtilities.invokeLater(() -> {
             getRootPane().requestFocusInWindow();
         });
     }//GEN-LAST:event_formWindowOpened
 
-
-    private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-    
-    private void updateWeekTitles() {
-        JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
-            jScrollPane6, jScrollPane7, jScrollPane8};
-        
-        jScrollPane1.putClientProperty("Date", LocalDate.of(-999999999, 01, 01));
-        
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
-
-        for (int i = 0; i < panes.length; i++) {
-            if (weekStart.plusDays(i).equals(LocalDate.now())) {
-                panes[i].setBorder(BorderFactory.createTitledBorder(
-                        BorderFactory.createLineBorder(java.awt.Color.GREEN),
-                        weekStart.plusDays(i).format(fmt),
-                        javax.swing.border.TitledBorder.LEFT,
-                        javax.swing.border.TitledBorder.TOP,
-                        null,
-                        java.awt.Color.GREEN.darker()
-                ));
-
-            } else {
-                panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
-            }
-            
-            // attaches a date to the pane (used in ListTransferHandler.java)
-            panes[i].putClientProperty("Date", weekStart.plusDays(i));
-        }
-
-        var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
-        jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
-
-        jPanel2.revalidate();
-        jPanel2.repaint();
-    }
-    /**
-     * @param args the command line arguments
-     */
-    
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Windows".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        //java.awt.EventQueue.invokeLater(() -> new Planner().setVisible(true));
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
@@ -705,7 +621,6 @@ public class Planner extends javax.swing.JFrame {
     private javax.swing.JList<String> jList6;
     private javax.swing.JList<String> jList7;
     private javax.swing.JList<String> jList8;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JPanel jPanel1;
