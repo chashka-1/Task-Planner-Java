@@ -136,7 +136,7 @@ public class AddTaskForm extends javax.swing.JDialog {
                     "Please enter a valid date.");
                 return;
             }
-            mainFrame.addTask(name, dueDate);        
+            mainFrame.addTask(name, dueDate);
         }
         
         dispose();

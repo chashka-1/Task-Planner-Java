@@ -74,10 +74,7 @@ class ListTransferHandler extends TransferHandler {
     /**
      * The list handles both copy and move actions.
      */
-    @Override
-    public int getSourceActions(JComponent c) {
-        return COPY_OR_MOVE;
-    }
+    
 
     /** 
      * When the export is complete, remove the old list entry if the
