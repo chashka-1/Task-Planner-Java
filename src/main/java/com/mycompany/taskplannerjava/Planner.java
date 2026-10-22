@@ -22,7 +22,7 @@ public class Planner extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger LOGGER = 
             java.util.logging.Logger.getLogger(Planner.class.getName());
-    // used to execute SQL statements
+
     private Connection conn;
     private LocalDate weekStart = LocalDate.now()
             .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -239,7 +239,7 @@ public class Planner extends javax.swing.JFrame {
             pstmt.setString(1, newDate.toString());
             pstmt.setInt(2, taskPriority);
             pstmt.setString(3, taskName);
-            
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }

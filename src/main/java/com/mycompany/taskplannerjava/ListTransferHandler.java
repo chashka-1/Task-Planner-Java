@@ -12,6 +12,8 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
+import static javax.swing.TransferHandler.COPY_OR_MOVE;
+import static javax.swing.TransferHandler.MOVE;
 
 class ListTransferHandler extends TransferHandler {
     private final Planner mainFrame;
