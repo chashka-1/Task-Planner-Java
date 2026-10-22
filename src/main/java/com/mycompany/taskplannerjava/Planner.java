@@ -232,28 +232,7 @@ public class Planner extends javax.swing.JFrame {
         //AddTaskForm popup = new AddTaskForm(this, true, "aaa");
         //TODO: SQL update task
     }
-    
-<<<<<<< HEAD
-    
-    private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-    
-    private void updateWeekTitles() {
-        JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
-            jScrollPane6, jScrollPane7, jScrollPane8};
-        
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
 
-        for (int i = 0; i < panes.length; i++) {
-            panes[i].setBorder(BorderFactory.createTitledBorder(weekStart.plusDays(i).format(fmt)));
-        }
-
-        var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
-        jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
-
-        jPanel2.revalidate();
-        jPanel2.repaint();
-    }
-=======
     void changeTaskLocation(String taskName, int taskPriority, LocalDate newDate) {
         
         if (conn == null) {
@@ -310,7 +289,6 @@ public class Planner extends javax.swing.JFrame {
         }
     }
     
->>>>>>> remove-complete-edit-db
     /**
      * Creates new form Planner
      */
@@ -642,7 +620,6 @@ public class Planner extends javax.swing.JFrame {
 //        System.out.println(weekStart.plusDays(dayIndex).toString() + " " + dayIndex);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
-<<<<<<< HEAD
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         // TODO add your handling code here:
         javax.swing.SwingUtilities.invokeLater(() -> {
@@ -650,7 +627,7 @@ public class Planner extends javax.swing.JFrame {
         });
     }//GEN-LAST:event_formWindowOpened
 
-=======
+
     private LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     
     private void updateWeekTitles() {
@@ -686,7 +663,6 @@ public class Planner extends javax.swing.JFrame {
         jPanel2.revalidate();
         jPanel2.repaint();
     }
->>>>>>> remove-complete-edit-db
     /**
      * @param args the command line arguments
      */
