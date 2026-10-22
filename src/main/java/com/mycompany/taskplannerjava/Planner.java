@@ -37,7 +37,9 @@ public class Planner extends javax.swing.JFrame {
             switch (task.getStatus()) {
                 case "overdue":
                     // checks if overdue task is dragged into a new, non-overdue day
-                    if (!task.getDueDate().isBefore(LocalDate.now())) {
+                    if (!task.getDueDate().isBefore(LocalDate.now()) 
+                            || (task.getDueDate().getYear() == -999999999)) {
+                        
                         task.setStatus("active");
                         strings[i] = task.getName();
                         break;
@@ -249,9 +251,9 @@ public class Planner extends javax.swing.JFrame {
             
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Something should have happened");
+                System.out.println(newDate.toString());
             } else {
-                System.out.println("FUCKKKKKK");
+                System.out.println("FUCKKKKKK" + " " + newDate.toString());
             }
             
         } catch (SQLException e) {
@@ -634,19 +636,19 @@ public class Planner extends javax.swing.JFrame {
         JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
             jScrollPane6, jScrollPane7, jScrollPane8};
         
-        jScrollPane8.putClientProperty("Date", LocalDate.of(-999999999, 01, 01));
+        jScrollPane1.putClientProperty("Date", LocalDate.of(-999999999, 01, 01));
         
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
 
-        for (int i = 0; i < panes.length - 1; i++) {
+        for (int i = 0; i < panes.length; i++) {
             if (weekStart.plusDays(i).equals(LocalDate.now())) {
                 panes[i].setBorder(BorderFactory.createTitledBorder(
-                        BorderFactory.createLineBorder(java.awt.Color.RED),
+                        BorderFactory.createLineBorder(java.awt.Color.GREEN),
                         weekStart.plusDays(i).format(fmt),
                         javax.swing.border.TitledBorder.LEFT,
                         javax.swing.border.TitledBorder.TOP,
                         null,
-                        java.awt.Color.RED
+                        java.awt.Color.GREEN.darker()
                 ));
 
             } else {
