@@ -612,9 +612,11 @@ public class Planner extends javax.swing.JFrame {
         JScrollPane[] panes = {jScrollPane2, jScrollPane3, jScrollPane4, jScrollPane5,
             jScrollPane6, jScrollPane7, jScrollPane8};
         
+        jScrollPane8.putClientProperty("Date", LocalDate.of(-999999999, 01, 01));
+        
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE dd.MM", java.util.Locale.ENGLISH);
 
-        for (int i = 0; i < panes.length; i++) {
+        for (int i = 0; i < panes.length - 1; i++) {
             if (weekStart.plusDays(i).equals(LocalDate.now())) {
                 panes[i].setBorder(BorderFactory.createTitledBorder(
                         BorderFactory.createLineBorder(java.awt.Color.RED),
@@ -632,6 +634,7 @@ public class Planner extends javax.swing.JFrame {
             // attaches a date to the pane (used in ListTransferHandler.java)
             panes[i].putClientProperty("Date", weekStart.plusDays(i));
         }
+
         var weekNumber = weekStart.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
         jPanel2.setBorder(BorderFactory.createTitledBorder("Week " + weekNumber));
 
