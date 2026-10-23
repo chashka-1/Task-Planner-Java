@@ -6,7 +6,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 import java.time.LocalDate;
-import javax.swing.DefaultListModel;
 import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
@@ -22,26 +21,21 @@ class ListTransferHandler extends TransferHandler {
     
     @Override
     public boolean importData(TransferHandler.TransferSupport info) {
-        String taskName = null;
-        JList targetDay;
-        JScrollPane parentPane;
         LocalDate targetDate;
-
+        
         if (!canImport(info)) {
             return false;
         }
 
-        JList list = (JList) info.getComponent();
-        DefaultListModel model = (DefaultListModel) list.getModel();
-
+        JList targetDay = (JList) info.getComponent();
+        int taskID;
+        
         try {
-            taskName = (String) info.getTransferable()
+            String data = (String) info.getTransferable()
                     .getTransferData(DataFlavor.stringFlavor);
-            taskName = taskName.replaceAll("<[^>]*>", "");
+            taskID = Integer.parseInt(data.trim());
             
-            // identifies the pane into which task is dropped as well as the pane's date
-            targetDay = (JList) info.getComponent(); 
-            parentPane = (JScrollPane) SwingUtilities
+            JScrollPane parentPane = (JScrollPane) SwingUtilities
                     .getAncestorOfClass(JScrollPane.class, targetDay);
             targetDate = (LocalDate) parentPane.getClientProperty("Date");
         } catch (UnsupportedFlavorException | IOException e) {
@@ -51,17 +45,9 @@ class ListTransferHandler extends TransferHandler {
 
         if (info.isDrop()) {
             JList.DropLocation dl = (JList.DropLocation) info.getDropLocation();
-            var taskID = mainFrame.gettingTaskID((JList) info.getComponent());
-
-            int index = dl.getIndex();
             
             if (dl.isInsert()) {
-                
-                mainFrame.changeTaskLocation(taskID, index, targetDate);
-                System.out.println(index);
-                return true;
-            } else {
-                model.set(index, taskName);
+                mainFrame.changeTaskLocation(taskID, targetDate);
                 return true;
             }
         }
@@ -71,8 +57,13 @@ class ListTransferHandler extends TransferHandler {
     @Override
     protected Transferable createTransferable(JComponent c) {
         JList list = (JList) c;
-        String value = (String) list.getSelectedValue();
-        return new StringSelection(value);
+        
+        if (list.getSelectedIndex() < 0) {
+            return null;
+        }
+        
+        int taskID = mainFrame.gettingTaskID(list);
+        return new StringSelection(String.valueOf(taskID));
     }
 
     @Override

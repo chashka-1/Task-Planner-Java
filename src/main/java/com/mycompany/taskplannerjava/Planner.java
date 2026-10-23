@@ -114,8 +114,7 @@ public class Planner extends javax.swing.JFrame {
                         rs.getString("name"),
                         LocalDate.parse(rs.getString("date")),
                         LocalDate.parse(rs.getString("date_created")),
-                        rs.getString("status"),
-                        rs.getInt("priority")
+                        rs.getString("status")
                 );
                 
                 // checks if fetched task status should be overdue
@@ -146,24 +145,19 @@ public class Planner extends javax.swing.JFrame {
         }
     }
     
-    public static void sort(ArrayList<Task> list) {
-        list.sort(Comparator.comparingInt(Task::getPriority));
-    }
-    
     public void addTask(String name, LocalDate dueDate) {
         if (conn == null) {
             System.out.println("ERROR: Connection to db not yet established");
             return;
         }
         String addStatement = 
-                "INSERT INTO task(name, date_created, date, priority) "
-                + "VALUES(?,?,?,?)";
+                "INSERT INTO task(name, date_created, date) "
+                + "VALUES(?,?,?)";
         
         try (var pstmt = conn.prepareStatement(addStatement)) {
             pstmt.setString(1, name);
             pstmt.setString(2, LocalDate.now().toString());
             pstmt.setString(3, dueDate.toString());
-            pstmt.setInt(4, 0);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e.getMessage());
@@ -187,6 +181,7 @@ public class Planner extends javax.swing.JFrame {
         
         try (var pstmt = conn.prepareStatement(removeStatement)) {
             pstmt.setInt(1, taskID);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e.getMessage());
         }
@@ -230,7 +225,6 @@ public class Planner extends javax.swing.JFrame {
 
     void changeTaskLocation(
             int taskID, 
-            int taskPriority, 
             LocalDate newDate) {
         
         if (conn == null) {
@@ -238,13 +232,12 @@ public class Planner extends javax.swing.JFrame {
             return;
         }
 
-        String changeDateStatement = "UPDATE task SET date = ? , priority = ? "
+        String changeDateStatement = "UPDATE task SET date = ? "
                 + "WHERE task_id = ?";
         
         try (var pstmt = conn.prepareStatement(changeDateStatement)) {
             pstmt.setString(1, newDate.toString());
-            pstmt.setInt(2, taskPriority);
-            pstmt.setInt(1, taskID);
+            pstmt.setInt(2, taskID);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e.getMessage());
