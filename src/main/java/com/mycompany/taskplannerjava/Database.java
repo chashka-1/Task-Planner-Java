@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-
 public class Database {
     // relative path connection string, foreign_keys enforced
     static String url = "jdbc:sqlite:PlannerInfo.db?foreign_keys=on";
@@ -23,7 +22,7 @@ public class Database {
         try {   
             if (conn != null && !conn.isClosed()) {
                 conn.close();
-                System.out.println("Disconnected from PlannerInfo.db joyfully!");
+                System.out.println("Disconnected from PlannerInfo.db.");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
