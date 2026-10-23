@@ -1,117 +1,78 @@
 package com.mycompany.taskplannerjava;
 
-/*
- * ListTransferHandler.java is used by the ListCutPaste example.
- */
-
-import java.io.*;
-import java.awt.datatransfer.*;
-import javax.swing.*;
-import static javax.swing.TransferHandler.COPY_OR_MOVE;
-import static javax.swing.TransferHandler.MOVE;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 import java.time.LocalDate;
+import javax.swing.JComponent;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 
 class ListTransferHandler extends TransferHandler {
-
-    /**
-     * Perform the actual data import.
-     */
+    private final Planner mainFrame;
     
-    private Planner mainFrame;
-    
-    ListTransferHandler (Planner parent) {
+    ListTransferHandler(Planner parent) {
         this.mainFrame = parent;
     }
     
     @Override
     public boolean importData(TransferHandler.TransferSupport info) {
-        String taskName = null;
-        JList targetDay;
-        JScrollPane parentPane;
         LocalDate targetDate;
-
-        //If we can't handle the import, bail now.
+        
         if (!canImport(info)) {
             return false;
         }
 
-        JList list = (JList)info.getComponent();
-        DefaultListModel model = (DefaultListModel)list.getModel();
-        //Fetch the data -- bail if this fails
+        JList targetDay = (JList) info.getComponent();
+        int taskID;
+        
         try {
-            taskName = (String)info.getTransferable().getTransferData(DataFlavor.stringFlavor);
-            taskName = taskName.replaceAll("<[^>]*>", "");
+            String data = (String) info.getTransferable()
+                    .getTransferData(DataFlavor.stringFlavor);
+            taskID = Integer.parseInt(data.trim());
             
-            // identifies the pane into which task is dropped as well as the pane's date
-            targetDay = (JList) info.getComponent(); 
-            parentPane = (JScrollPane) 
-                    SwingUtilities.getAncestorOfClass(JScrollPane.class, targetDay);
+            JScrollPane parentPane = (JScrollPane) SwingUtilities
+                    .getAncestorOfClass(JScrollPane.class, targetDay);
             targetDate = (LocalDate) parentPane.getClientProperty("Date");
-            
-        } catch (UnsupportedFlavorException ufe) {
-            System.out.println("importData: unsupported data flavor");
-            return false;
-        } catch (IOException ioe) {
-            System.out.println("importData: I/O exception");
+        } catch (UnsupportedFlavorException | IOException e) {
+            System.out.println(e.getMessage());
             return false;
         }
 
-        if (info.isDrop()) { //This is a drop 
-            JList.DropLocation dl = (JList.DropLocation)info.getDropLocation();
-            int index = dl.getIndex();
+        if (info.isDrop()) {
+            JList.DropLocation dl = (JList.DropLocation) info.getDropLocation();
+            
             if (dl.isInsert()) {
-                mainFrame.changeTaskLocation(taskName, index, targetDate);
-                System.out.println(index);
-                return true;
-            } else {
-                model.set(index, taskName);
+                mainFrame.changeTaskLocation(taskID, targetDate);
                 return true;
             }
-        } else { //This is a paste
-            int index = list.getSelectedIndex();
-            // if there is a valid selection,
-            // insert data after the selection
-            if (index >= 0) {
-                model.add(list.getSelectedIndex()+1, taskName);
-            // else append to the end of the list
-            } else {
-                model.addElement(taskName);
-            }
-            return true;
         }
+        return false;
     }
 
-    /**
-     * Bundle up the data for export.
-     */
     @Override
     protected Transferable createTransferable(JComponent c) {
-        JList list = (JList)c;
-        String value = (String)list.getSelectedValue();
-        return new StringSelection(value);
+        JList list = (JList) c;
+        
+        if (list.getSelectedIndex() < 0) {
+            return null;
+        }
+        
+        int taskID = mainFrame.gettingTaskID(list);
+        return new StringSelection(String.valueOf(taskID));
     }
 
-    /**
-     * The list handles both copy and move actions.
-     */
     @Override
     public int getSourceActions(JComponent c) {
-        return COPY_OR_MOVE;
-    }
-
-    /** 
-     * When the export is complete, remove the old list entry if the
-     * action was a move.
-     */
-    @Override
-    protected void exportDone(JComponent c, Transferable data, int action) {
-
+        return MOVE;
     }
 
     @Override
     public boolean canImport(TransferHandler.TransferSupport support) {
-        //checking if import Strings
         return support.isDataFlavorSupported(DataFlavor.stringFlavor);
     }
 }
-

@@ -1,22 +1,15 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.taskplannerjava;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-/**
- *
- * @author goatm
- */
 public class Database {
     // relative path connection string, foreign_keys enforced
     static String url = "jdbc:sqlite:PlannerInfo.db?foreign_keys=on";
     private Connection conn;
     
     public void connect() {
-         
         try {
             conn = DriverManager.getConnection(url);
             System.out.println("Connected to PlannerInfo.db.");
@@ -29,7 +22,7 @@ public class Database {
         try {   
             if (conn != null && !conn.isClosed()) {
                 conn.close();
-                System.out.println("Disconnected from PlannerInfo.db joyfully!");
+                System.out.println("Disconnected from PlannerInfo.db.");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
